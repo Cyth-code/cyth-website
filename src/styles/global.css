@@ -1,0 +1,42 @@
+/* CSS reference: https://www.wix.com/velo/reference/$w/styling-elements-with-css */
+ 
+/* These CSS styles will be applied globally to every page of this site. Write your CSS here, e.g.: */
+
+/*  Change button background color to red: */
+/* .button {
+    background-color: red;
+} */
+
+blockquote {
+    background-color: #EEEFEE;
+    border-radius: 20px;
+    font-size: 14px;
+    padding: 35px !important;
+    border:0 !important;
+}
+/*
+.gradient-text {
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(180deg, #1C1B1A, #E5E5E5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+*/
+.radius {
+  border-radius: 15px !important;
+}
+
+.selected-button {
+  background-image: linear-gradient(180deg, #FF2800 0%, #991700 100%);
+  color: white !important;
+}
+.selected-button * {
+  color: white !important;
+}
+
+.active-button {
+  color: #FF2800;
+}
