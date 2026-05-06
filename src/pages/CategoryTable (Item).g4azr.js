@@ -287,7 +287,7 @@ async function productsSetup(currentItem) {
       try {
         addButton.label = 'No Longer Manufactured';
       } catch {}
-      
+
       if (ribbon) {
         ribbon.text = 'No Longer Manufactured';
         ribbon.show?.();
@@ -306,7 +306,7 @@ async function productsSetup(currentItem) {
     if (isBlank(itemData.model)) {
       textOrHide($item, '#secondaryProdText', itemData.details);
       $item('#productRepeaterName')?.hide?.();
-      $item('#productRepeaterDetails')?.hide?.();
+      // $item('#productRepeaterDetails')?.hide?.();
     } else {
       textOrHide($item, '#productRepeaterName', itemData.model);
       textOrHide($item, '#productRepeaterDetails', itemData.details);
