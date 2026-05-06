@@ -205,6 +205,7 @@ export const getCatPageProducts = webMethod(
                     "sku",
                     "model",
                     "primaryDesc",
+                    "desc_original",
                     "formattedPrice",
                     "link-products-2-slug",
                     "mainMedia",

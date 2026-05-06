@@ -302,6 +302,7 @@ async function productsSetup(currentItem) {
         addButton.label = 'View';
       } catch {}
     }
+    console.log(itemData);
 
     if (isBlank(itemData.model)) {
       textOrHide($item, '#secondaryProdText', itemData.details);
