@@ -571,6 +571,8 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     else {
       $w(ADD_TO_CART_ID).disable();
       $w(ADD_TO_CART_ID2).disable();
+      $w(ADD_TO_CART_ID).label = "No Longer Manufactured";
+      $w(ADD_TO_CART_ID2).label = "No Longer Manufactured";
     }
   }
 
@@ -582,6 +584,8 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     else {
       $w(ADD_TO_CART_ID).disable();
       $w(ADD_TO_CART_ID2).disable();
+      $w(ADD_TO_CART_ID).label = "No Longer Manufactured";
+      $w(ADD_TO_CART_ID2).label = "No Longer Manufactured";
     }
   }
 
