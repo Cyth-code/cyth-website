@@ -302,16 +302,15 @@ async function productsSetup(currentItem) {
         addButton.label = 'View';
       } catch {}
     }
-    console.log(itemData);
 
     if (isBlank(itemData.model)) {
       textOrHide($item, '#secondaryProdText', itemData.details);
       $item('#productRepeaterName')?.hide?.();
-      textOrHide($item, '#productRepeaterDetails', itemData.desc_original);
+      textOrHide($item, '#productRepeaterDetails', itemData.primaryDesc);
     } else {
       textOrHide($item, '#productRepeaterName', itemData.model);
       if(isBlank(itemData.details)) {
-        textOrHide($item, '#productRepeaterDetails', itemData.desc_original);
+        textOrHide($item, '#productRepeaterDetails', itemData.primaryDesc);
       } else {
         textOrHide($item, '#productRepeaterDetails', itemData.details);
       }
