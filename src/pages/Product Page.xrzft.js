@@ -565,14 +565,14 @@ async function setPageContentAndStates(product, extData, inventoryData) {
 
   if ($w(LIFECYCLE_MODEL_ID)) {
     $w(LIFECYCLE_MODEL_ID).text = `Lifecycle: ${extData.lifecycleStatus}`;
-    if (extData.lifecycleStatus === "Active") {
+    if (extData.lifecycleStatus !== "Obsolete") {
       $w(LIFECYCLE_MODEL_ID).style.color = "green";
     }
   }
 
   if ($w(LIFECYCLE_NO_MODEL_ID)) {
     $w(LIFECYCLE_NO_MODEL_ID).text = `Lifecycle: ${extData.lifecycleStatus}`;
-    if (extData.lifecycleStatus === "Active") {
+    if (extData.lifecycleStatus !== "Obsolete") {
       $w(LIFECYCLE_NO_MODEL_ID).style.color = "green";
     }
   }
@@ -581,7 +581,7 @@ async function setPageContentAndStates(product, extData, inventoryData) {
 
   if (inventoryData) {
     cythStockHtml =
-      extData.lifecycleStatus === "Active"
+      extData.lifecycleStatus !== "Obsolete"
         ? inventoryData.main_stock
         : obsoleteText;
 
