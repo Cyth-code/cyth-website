@@ -306,7 +306,7 @@ async function productsSetup(currentItem) {
     if (isBlank(itemData.model)) {
       textOrHide($item, '#secondaryProdText', itemData.details);
       $item('#productRepeaterName')?.hide?.();
-      // $item('#productRepeaterDetails')?.hide?.();
+      textOrHide($item, '#productRepeaterDetails', itemData.details);
     } else {
       textOrHide($item, '#productRepeaterName', itemData.model);
       textOrHide($item, '#productRepeaterDetails', itemData.details);
