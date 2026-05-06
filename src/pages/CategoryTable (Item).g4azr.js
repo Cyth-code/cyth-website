@@ -284,6 +284,10 @@ async function productsSetup(currentItem) {
 
     if (isObsolete) {
       addButton?.disable?.();
+      try {
+        addButton.label = 'No Longer Manufactured';
+      } catch {}
+      
       if (ribbon) {
         ribbon.text = 'No Longer Manufactured';
         ribbon.show?.();
