@@ -231,9 +231,8 @@ export const getCatPageProducts = webMethod(
                     "leadTime",
                     "lifecyclePhase",
                     "productPageUrl",
-                    "inStock",
-                    "quantityInStock",
-                    "isInStock"
+                    "partnerInStock",
+                    "partnerLastUpdated"
                 ]);
 
                 return product;
