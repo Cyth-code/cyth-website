@@ -268,35 +268,33 @@ async function productsSetup(currentItem) {
   const productsRepeater = $w('#productsRepeater');
 
   productsRepeater.onItemReady(($item, itemData) => {
-    const ribbon = $item('#productRepeaterRibbon');
-    if (ribbon) {
-      ribbon.text = '';
-      ribbon.hide?.();
-    }
+        const ribbon = $item('#productRepeaterRibbon');
+        if (ribbon) {
+            ribbon.text = '';
+            ribbon.hide?.();
+        }
 
-    const isObsolete = itemData.lifecyclePhase === 'Obsolete';
-    const isInStock =
-      itemData.isInStock === true ||
-      itemData.inStock === true ||
-      Number(itemData.quantityInStock) > 0;
+        const isObsolete = itemData.lifecyclePhase === 'Obsolete';
+        const isPartnerInStock = itemData.partnerInStock === true;
 
-    const addButton = $item('#productRepeaterAddButton');
+        const addButton = $item('#productRepeaterAddButton');
 
-    if (isObsolete) {
-      if (ribbon) {
-        ribbon.text = 'No Longer Manufactured';
-        ribbon.show?.();
-      }
-    } else if (isInStock) {
-      if (ribbon) {
-        ribbon.text = 'In Stock';
-        ribbon.show?.();
-      }
-      addButton?.enable?.();
-      try {
-        addButton.label = 'View';
-      } catch {}
-    }
+        if (isObsolete) {
+            if (ribbon) {
+                ribbon.text = 'No Longer Manufactured';
+                ribbon.show?.();
+            }
+        } else {
+            addButton?.enable?.();
+            try {
+                addButton.label = 'View';
+            } catch {}
+
+            if (isPartnerInStock && ribbon) {
+                ribbon.text = 'Ships in 3-5 Days';
+                ribbon.show?.();
+            }
+        }
 
     if (isBlank(itemData.model)) {
       textOrHide($item, '#secondaryProdText', itemData.details);
