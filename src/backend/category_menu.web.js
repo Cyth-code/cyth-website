@@ -169,31 +169,48 @@ export const getCatPageProducts = webMethod(
                 return [];
             }
 
-            // 2) Stores/Products: MUST be chunked because max limit = 100
+            // 2) Stores/Products + Import912 partner inventory: chunked in parallel
             const CHUNK_SIZE = 100;
-            const storesItems = [];
 
-            for (let i = 0; i < pageSkus.length; i += CHUNK_SIZE) {
-                const chunk = pageSkus.slice(i, i + CHUNK_SIZE);
+            const fetchInChunks = async (collection) => {
+                const items = [];
+                for (let i = 0; i < pageSkus.length; i += CHUNK_SIZE) {
+                    const chunk = pageSkus.slice(i, i + CHUNK_SIZE);
+                    const r = await wixData
+                        .query(collection)
+                        .hasSome('sku', chunk)
+                        .limit(CHUNK_SIZE)
+                        .find();
+                    items.push(...(r.items || []));
+                }
+                return items;
+            };
 
-                const wpChunk = await wixData
-                    .query('Stores/Products')
-                    .hasSome('sku', chunk)
-                    .limit(100) // IMPORTANT: Stores max 100
-                    .find();
-
-                storesItems.push(...(wpChunk.items || []));
-            }
+            const [storesItems, partnerItems] = await Promise.all([
+                fetchInChunks('Stores/Products'),
+                fetchInChunks('Import912')
+            ]);
 
             const lookup = Object.fromEntries(
                 (storesItems || []).map(obj => [String(obj.sku || '').trim(), obj])
             );
 
-            // 3) Merge Import910 + Stores/Products
-            const merged = extendedProductsData.map(obj => ({
-                ...obj,
-                ...(lookup[String(obj.sku || '').trim()] || {})
-            }));
+            const partnerLookup = Object.fromEntries(
+                (partnerItems || []).map(obj => [String(obj.sku || '').trim(), obj])
+            );
+
+            // 3) Merge Import910 + Stores/Products + Import912 (namespaced)
+            const merged = extendedProductsData.map(obj => {
+                const skuKey = String(obj.sku || '').trim();
+                const partner = partnerLookup[skuKey] || {};
+                return {
+                    ...obj,
+                    ...(lookup[skuKey] || {}),
+                    partnerInStock: partner.inStock === true,
+                    partnerLastUpdated: partner.last_updated || null
+                };
+            });
+
 
             // 4) Pick only what your frontend expects
             const pick = (obj, keys) => Object.fromEntries(keys.map(k => [k, obj[k]]));
