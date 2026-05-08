@@ -283,11 +283,6 @@ async function productsSetup(currentItem) {
     const addButton = $item('#productRepeaterAddButton');
 
     if (isObsolete) {
-      addButton?.disable?.();
-      try {
-        addButton.label = 'No Longer Manufactured';
-      } catch {}
-
       if (ribbon) {
         ribbon.text = 'No Longer Manufactured';
         ribbon.show?.();
