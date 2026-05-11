@@ -133,7 +133,8 @@ function processRow(row, skuMap) {
   }
 
   const detectedProductName = matchedProduct.name || "";
-  const slug = slugify(detectedProductName);
+  const productSlug = row.slug || "";
+  const slug = slugify(productSlug != "" ? productSlug : detectedProductName);
 
   if (!slug) {
     return Promise.resolve({
