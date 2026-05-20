@@ -305,7 +305,8 @@ async function productsSetup(currentItem) {
         textOrHide($item, '#productRepeaterDetails', itemData.desc_original);
       } else {
         textOrHide($item, '#productRepeaterDetails', itemData.details);
-      
+      }
+
     }
 
     textOrHide($item, '#productsRepeaterPrice', itemData.formattedPrice);
