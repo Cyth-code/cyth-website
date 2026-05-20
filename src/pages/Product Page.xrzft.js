@@ -2,6 +2,7 @@ import wixSeoFrontend from "wix-seo-frontend";
 import wixStores from "wix-stores-frontend";
 import wixLocation from "wix-location-frontend";
 import wixData from "wix-data";
+import { rendering } from "wix-window";
 
 // ================================
 // PAGE CONFIG
@@ -72,8 +73,17 @@ const DOC_FIELDS = [
 const PRODUCTS_EXTENDED_COLLECTION_ID = "Import910";
 const PARTNER_INVENTORY_COLLECTION_ID = "Import912";
 
+const MODEL_OPTIONS_MAX = 50;
+const DOCS_QUERY_LIMIT = 20;
+const GALLERY_MAX_ITEMS = 12;
+
 let currentProduct = null;
 let docsWiredOnce = false;
+let dropdownOptionsLoaded = false;
+
+function isBrowserRender() {
+  return !rendering || rendering.env === "browser";
+}
 
 // ================================
 // Product source of truth
@@ -216,6 +226,15 @@ async function getPartnerInventoryData(pageSku) {
 // Uses custom collection for sibling SKUs, then Stores/Products lookup
 // only for selected option navigation.
 // ================================
+async function countModelSiblings(modelName) {
+  const result = await wixData
+    .query(PRODUCTS_EXTENDED_COLLECTION_ID)
+    .eq("model", modelName)
+    .limit(1)
+    .count();
+  return typeof result === "number" ? result : 0;
+}
+
 async function setDropdownOptions(modelName, currentSku) {
   if (!$w(OPTIONS_DROPDOWN_ID)) return;
 
@@ -226,8 +245,8 @@ async function setDropdownOptions(modelName, currentSku) {
 
   const results = await wixData
     .query(PRODUCTS_EXTENDED_COLLECTION_ID)
-    .contains("model", modelName)
-    .limit(1000)
+    .eq("model", modelName)
+    .limit(MODEL_OPTIONS_MAX)
     .find();
 
   const items = results.items || [];
@@ -257,6 +276,52 @@ async function setDropdownOptions(modelName, currentSku) {
 
   dropdownOptions.splice(pageOptionIndex, 1);
   $w(OPTIONS_DROPDOWN_ID).options = dropdownOptions;
+}
+
+async function loadDropdownOptionsOnce(modelName, currentSku) {
+  if (dropdownOptionsLoaded) return;
+  dropdownOptionsLoaded = true;
+  await setDropdownOptions(modelName, currentSku);
+}
+
+function wireDropdownLazyLoad(modelName, currentSku) {
+  const dd = $w(OPTIONS_DROPDOWN_ID);
+  if (!dd) return;
+
+  const load = () => loadDropdownOptionsOnce(modelName, currentSku);
+
+  if (typeof dd.onFocus === "function") {
+    dd.onFocus(load);
+  }
+  if (typeof dd.onClick === "function") {
+    dd.onClick(load);
+  }
+}
+
+async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) {
+  if (!$w(OPTIONS_DROPDOWN_ID)) return;
+
+  if (!modelName || modelName === "empty") {
+    $w(OPTIONS_DROPDOWN_ID).collapse();
+    return;
+  }
+
+  const siblingCount = await countModelSiblings(modelName);
+  if (siblingCount <= 1) {
+    $w(OPTIONS_DROPDOWN_ID).collapse();
+    return;
+  }
+
+  $w(OPTIONS_DROPDOWN_ID).placeholder =
+    currentOptionLabel || "Select Option";
+
+  if (!isBrowserRender()) {
+    $w(OPTIONS_DROPDOWN_ID).collapse();
+    return;
+  }
+
+  $w(OPTIONS_DROPDOWN_ID).expand();
+  wireDropdownLazyLoad(modelName, currentSku);
 }
 
 function wireDropdownNavigation() {
@@ -390,6 +455,7 @@ function wireDocsRepeatersOnce() {
 async function loadDocsForProduct(productId) {
   if (!$w("#repeater1") || !$w("#repeater2")) return;
   if (!productId) return;
+  if (!isBrowserRender()) return;
 
   wireDocsRepeatersOnce();
 
@@ -401,6 +467,7 @@ async function loadDocsForProduct(productId) {
   const res = await wixData
     .query(PRODUCT_DOCS_COLLECTION)
     .eq(PRODUCT_REF_FIELD, productId)
+    .limit(DOCS_QUERY_LIMIT)
     .find();
 
   const rows = (res.items || []).filter((row) => matchesProduct(row, productId));
@@ -519,19 +586,17 @@ async function setPageContentAndStates(product, extData, inventoryData) {
   const storeDescText = String(storeDescRaw || "");
   const descForHtml = String(storeDescHtml || storeDescRaw || "");
 
-  if ($w(STORE_DESC_MODEL_ID)) {
-    if ("html" in $w(STORE_DESC_MODEL_ID) && descForHtml) {
-      $w(STORE_DESC_MODEL_ID).html = descForHtml;
-    } else {
-      $w(STORE_DESC_MODEL_ID).text = storeDescText;
-    }
-  }
+  const isNoModel =
+    extData.model === "empty" ||
+    extData.details === "empty" ||
+    extData.primaryDesc === "empty";
 
-  if ($w(STORE_DESC_NO_MODEL_ID)) {
-    if ("html" in $w(STORE_DESC_NO_MODEL_ID) && descForHtml) {
-      $w(STORE_DESC_NO_MODEL_ID).html = descForHtml;
+  const descTargetId = isNoModel ? STORE_DESC_NO_MODEL_ID : STORE_DESC_MODEL_ID;
+  if ($w(descTargetId)) {
+    if ("html" in $w(descTargetId) && descForHtml) {
+      $w(descTargetId).html = descForHtml;
     } else {
-      $w(STORE_DESC_NO_MODEL_ID).text = storeDescText;
+      $w(descTargetId).text = storeDescText;
     }
   }
 
@@ -554,6 +619,7 @@ async function setPageContentAndStates(product, extData, inventoryData) {
   const mediaItems = product?.mediaItems || product?.productMedia || [];
   if ($w("#gallery1") && Array.isArray(mediaItems)) {
     $w("#gallery1").items = mediaItems
+      .slice(0, GALLERY_MAX_ITEMS)
       .map((item) => ({
         type: "image",
         src: item.src || item.url || item.image,
@@ -606,12 +672,11 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     if ($w(CYTH_STOCK_ID)) $w(CYTH_STOCK_ID).text = inventoryData.simple_stock;
   }
 
-  await setDropdownOptions(extData.model, pageSku);
-
-  const isNoModel =
-    extData.model === "empty" ||
-    extData.details === "empty" ||
-    extData.primaryDesc === "empty";
+  await prepareDropdownOnLoad(
+    extData.model,
+    pageSku,
+    extData.optionIdentif || "Select Option"
+  );
 
   await ensureCorrectState(isNoModel);
 
@@ -643,6 +708,7 @@ async function setPageContentAndStates(product, extData, inventoryData) {
 // ================================
 $w.onReady(async () => {
   try {
+    dropdownOptionsLoaded = false;
     currentProduct = await getCurrentProduct();
     if (!currentProduct?.sku) return;
 

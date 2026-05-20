@@ -4,6 +4,11 @@ import { rendering } from 'wix-window'; // guard against SSR double-run
 
 
 $w.onReady(function () {
+  // Menu hover/tab wiring is browser-only; skip during SSR/crawler render to reduce memory/CPU.
+  if (rendering && rendering.env !== 'browser') {
+    return;
+  }
+
   const allElements = $w('Box, Button, Text, Image');
 
   allElements.forEach((element) => {
