@@ -297,7 +297,6 @@ async function productsSetup(currentItem) {
         }
 
     if (isBlank(itemData.model)) {
-      textOrHide($item, '#secondaryProdText', itemData.details);
       $item('#productRepeaterName')?.hide?.();
       textOrHide($item, '#productRepeaterDetails', itemData.desc_original);
     } else {
@@ -306,8 +305,7 @@ async function productsSetup(currentItem) {
         textOrHide($item, '#productRepeaterDetails', itemData.desc_original);
       } else {
         textOrHide($item, '#productRepeaterDetails', itemData.details);
-      }
-      $item('#secondaryProdText')?.hide?.();
+      
     }
 
     textOrHide($item, '#productsRepeaterPrice', itemData.formattedPrice);
