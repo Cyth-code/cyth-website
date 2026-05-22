@@ -32,7 +32,7 @@ function runLoop() {
         return;
       }
 
-      return processNextSeoBatch(10).then((res) => {
+      return processNextSeoBatch(2).then((res) => {
         console.log("Batch:", res);
 
         // small pause keeps the UI responsive + avoids hammering
