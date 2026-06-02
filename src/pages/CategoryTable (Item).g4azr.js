@@ -268,10 +268,11 @@ async function productsSetup(currentItem) {
   const productsRepeater = $w('#productsRepeater');
 
   productsRepeater.onItemReady(($item, itemData) => {
+        const ribbonContainer = $item('#productRepeaterRibbonContainer');
         const ribbon = $item('#productRepeaterRibbon');
         if (ribbon) {
             ribbon.text = '';
-            ribbon.hide?.();
+            ribbonContainer.hide?.();
         }
 
         const isObsolete = itemData.lifecyclePhase === 'Obsolete';
@@ -282,7 +283,9 @@ async function productsSetup(currentItem) {
         if (isObsolete) {
             if (ribbon) {
                 ribbon.text = 'No Longer Manufactured';
-                ribbon.show?.();
+                ribbon.style.color = '#939596'; //Theme Grey
+                ribbonContainer.backgroundColor = '#DCE8FF'; //Theme Very Light Blue
+                ribbonContainer.show?.();
             }
         } else {
             addButton?.enable?.();
@@ -292,7 +295,9 @@ async function productsSetup(currentItem) {
 
             if (isPartnerInStock && ribbon) {
                 ribbon.text = 'Ships in 3-5 Days';
-                ribbon.show?.();
+                ribbon.style.color = '#FFFFFF';
+                ribbonContainer.style.backgroundColor = '#03B440'; //theme green
+                ribbonContainer.show?.();
             }
         }
 
