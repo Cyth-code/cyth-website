@@ -3,10 +3,17 @@
 $w.onReady(function () {
 	$w("#dynamicDataset").onReady(() => {
 		const currentEvent = $w("#dynamicDataset").getCurrentItem()
-		if(currentEvent.showRsvp){
-			$w("#rsvpSection").expand()
-			$w("#rsvpButton").expand()
+		const rsvpSection = $w("#rsvpSection");
+		const rsvpButton = $w("#rsvpButton");
+
+		if(currentEvent?.show_rsvp){
+			rsvpSection.expand?.()
+			rsvpButton.expand?.()
 		}
+
+		rsvpButton.onClick(() => {
+			rsvpSection.scrollTo?.();
+		});
 
 		const formValues = {
 			"event_interested_in_1": currentEvent.title
