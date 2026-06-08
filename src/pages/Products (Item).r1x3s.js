@@ -51,9 +51,9 @@ const CYTH_STOCK_ID = "#cythStock";
 // ================================
 // STOCK TEXTS
 // ================================
-const inStockText = '<p style="color: #008000;"><strong>Stock Status: In-Stock Ready-to-Ship';
-const outOfStockText = '<p style="color: #000000;"><strong>Stock Status: Available to Order</strong></p> ';
-const obsoleteText = '<p style="color: #FF0000;"><strong>Stock Status: OBSOLETE - CONTACT CYTH</strong></p>';
+const inStockText = '<p style="color: #008000;"><strong>In-Stock Ready-to-Ship';
+const outOfStockText = '<p style="color: #000000;"><strong>Available to Order</strong></p> ';
+const obsoleteText = '<p style="color: #FF0000;"><strong>OBSOLETE - CONTACT CYTH</strong></p>';
 
 // ================================
 // CONFIG — Product Docs
@@ -248,7 +248,7 @@ async function getPartnerInventoryData(pageSku) {
     digikey_inventory: digikeyQty > 0 ? "In Stock" : "Out of Stock",
     newark_price: item["newark_price"] ?? "Not Listed",
     newark_inventory: newarkQty > 0 ? "In Stock" : "Out of Stock",
-    main_stock: item["inStock"] ? (inStockText + " as of " + item["last_updated"]) : outOfStockText,
+    main_stock: item["inStock"] ? inStockText : outOfStockText,  //(inStockText + " as of " + item["last_updated"]) : outOfStockText,
     simple_stock: item["inStock"] ? "In Stock" : "Out of Stock"
   };
 }
