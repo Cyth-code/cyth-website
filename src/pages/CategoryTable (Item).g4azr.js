@@ -294,7 +294,7 @@ async function productsSetup(currentItem) {
             } catch {}
 
             if (isPartnerInStock && ribbon) {
-                ribbon.text = 'Ships in 3-5 Days';
+                ribbon.text = 'In Stock, Ready to Ship';
                 ribbon.style.color = '#FFFFFF';
                 ribbonContainer.style.backgroundColor = '#03B440'; //theme green
                 ribbonContainer.show?.();
