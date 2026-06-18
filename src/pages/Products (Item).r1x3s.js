@@ -1,8 +1,11 @@
+// @ts-nocheck
 import wixSeoFrontend from "wix-seo-frontend";
 import wixStores from "wix-stores-frontend";
 import wixLocation from "wix-location-frontend";
 import wixLocationFrontend from "wix-location-frontend";
 import wixData from "wix-data";
+
+
 
 // ================================
 // DIAG helpers
@@ -31,11 +34,13 @@ const SUBHEADER_ID = "#subHeader";
 const OBS_MESSAGE_ID = "#obsMessage";
 const MODEL_SKU_ID = "#modelSku";
 const PRICE_ID = "#price";
+const ENGINEER_SUPPORT_ID = "#supportText"
 
 const DETAILS_ONLY_ID = "#detailsOnly";
 const NO_MODEL_SKU_ID = "#noModelSku";
 const NO_MODEL_PRICE_ID = "#noModelPrice";
 const NO_MODEL_OBS_ID = "#noModelObsMessage";
+const NO_MODEL_ENG_SUPPORT_ID = "#supportTextN";
 
 // Competitor hover (optional)
 const COMP_BUTTON_ID = "#competitorButton";
@@ -202,7 +207,8 @@ async function getExtendedProductData(pageSku) {
       primaryDesc: "empty",
       defaultDesc: "No Description",
       optionIdentif: "",
-      lifecycleStatus: "Contact Cyth For Life Cycle Status Information"
+      lifecycleStatus: "Contact Cyth For Life Cycle Status Information",
+      supportInfo: "Qualifies for X Hours of Engineering Support"
     };
   }
 
@@ -212,7 +218,8 @@ async function getExtendedProductData(pageSku) {
     details: item.details,
     primaryDesc: item.primaryDesc,
     lifecyclePhase: item.lifecyclePhase,
-    optionIdentif: item.optionIdentif
+    optionIdentif: item.optionIdentif,
+    supportInfo: item.supportInfo
   });
 
   return {
@@ -222,7 +229,8 @@ async function getExtendedProductData(pageSku) {
     primaryDesc: item["primaryDesc"] ?? "empty",
     defaultDesc: item["desc_original"] ?? "No Description",
     optionIdentif: item["optionIdentif"] ?? "",
-    lifecycleStatus: item["lifecyclePhase"] ?? "Contact Cyth For Life Cycle Status Information"
+    lifecycleStatus: item["lifecyclePhase"] ?? "Contact Cyth For Life Cycle Status Information",
+    supportInfo: item["supportInfo"] ?? "Complimentary engineering Support with every purchase"
   };
 }
 
@@ -491,11 +499,8 @@ async function loadDocsForProduct(productId) {
     });
   });
 
-  const specDoc = flatDocs.find((d) => d.fieldKey === "docsNew") || null;
-  const otherDocs = flatDocs.filter((d) => d.fieldKey !== "docsNew");
-
-  repeater1.data = specDoc ? [specDoc] : [];
-  repeater2.data = otherDocs;
+  repeater1.data = [];
+  repeater2.data = flatDocs;
 
   setRepeaterVisibility(repeater1, repeater1.data.length > 0);
   setRepeaterVisibility(repeater2, repeater2.data.length > 0);
@@ -604,6 +609,17 @@ if (nLifecycle) {
   if(extData.lifecycleStatus === 'Active'){ nLifecycle.style.color = 'green'}
 }
 
+//set engineering support text
+  const mSupportText = el(ENGINEER_SUPPORT_ID);
+  
+  if (mSupportText)  mSupportText.text = extData.supportInfo || "nothing";
+  L("model support text set", { mSupportText: mSupportText.text });
+
+  const nSupportText = el(NO_MODEL_ENG_SUPPORT_ID);
+  
+  if (nSupportText)  nSupportText.text = extData.supportInfo || "Complimentary engineering Support with every purchase";
+  L("no model support text set", { nSupportText: nSupportText.text });
+
   // Partner inventory
   let cythStockHtml = outOfStockText;
   try {
@@ -649,12 +665,12 @@ if (nLifecycle) {
     if (el(DETAILS_ONLY_ID)) el(DETAILS_ONLY_ID).text = extData.defaultDesc;
     if (el(NO_MODEL_SKU_ID)) el(NO_MODEL_SKU_ID).text = `SKU: ${pageSku}`;
     if (el(NO_MODEL_PRICE_ID)) el(NO_MODEL_PRICE_ID).text = `Price: ${priceFormatted}` || "";
-    if (el(NO_MODEL_OBS_ID)) el(NO_MODEL_OBS_ID).html = cythStockHtml
+    if (el(NO_MODEL_OBS_ID)) el(NO_MODEL_OBS_ID).html = cythStockHtml;
   } else {
     if (el(PAGE_NAME_ID)) el(PAGE_NAME_ID).text = extData.model || "";
     if (el(PRIMARY_DESC_ID)) el(PRIMARY_DESC_ID).text = extData.primaryDesc || "";
     if (el(SUBHEADER_ID)) el(SUBHEADER_ID).text = extData.details || "";
-    if (el(OBS_MESSAGE_ID)) el(OBS_MESSAGE_ID).html = cythStockHtml
+    if (el(OBS_MESSAGE_ID)) el(OBS_MESSAGE_ID).html = cythStockHtml;
     if (el(MODEL_SKU_ID)) el(MODEL_SKU_ID).text = `SKU: ${pageSku}`;
     if (el(PRICE_ID)) el(PRICE_ID).text = `Price: ${priceFormatted}` || "";
   }
@@ -665,6 +681,8 @@ if (nLifecycle) {
     if (extData.lifecycleStatus === "Obsolete") addBtn.disable?.();
     else addBtn.enable?.();
   }
+
+  
 }
 
 // ================================
