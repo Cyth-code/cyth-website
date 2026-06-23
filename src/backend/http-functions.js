@@ -2,8 +2,8 @@ import { ok, forbidden } from "wix-http-functions";
 import { mediaManager } from "wix-media-backend";
 import wixData from "wix-data";
 
-const API_SECRET = "258508b840ff4d2ce5466af9b27bf4823f25603198acd2de4d2f640cd2777148";
-const COLLECTION = "product_docs";
+const API_SECRET = "98ec83f1341a0c60707f81daa06b11411c4b89a9ba8d0792c0b9cb2d4df7c834";
+const COLLECTION = "Import913";
 
 function checkAuth(request) {
   return request.headers["x-api-secret"] === API_SECRET;
