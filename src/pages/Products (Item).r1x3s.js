@@ -62,15 +62,13 @@ const obsoleteText = '<p style="color: #FF0000;"><strong>OBSOLETE - CONTACT CYTH
 
 // ================================
 // CONFIG — Product Docs
+// Collection "Import913" (product_docs) stores one row per SKU with a
+// "documents" field containing an array of wix:document:// URLs,
+// uploaded by the sku-doc-uploader pipeline.
 // ================================
-const PRODUCT_DOCS_COLLECTION = "Import911";
-const PRODUCT_REF_FIELD = "reference";
-
-const DOC_FIELDS = [
-  { key: "docsNew", label: "Specifications" },
-  { key: "gettingStarted", label: "Getting Started" },
-  { key: "calibrationProcedure", label: "Calibration Procedure" }
-];
+const PRODUCT_DOCS_COLLECTION = "Import913";
+const PRODUCT_SKU_FIELD = "sku";
+const PRODUCT_DOCS_FIELD = "documents";
 
 // ================================
 // Collection IDs
@@ -101,25 +99,18 @@ function openSideCart() {
     let opened = false;
 
     try {
-      // @ts-ignore
       $w("ShoppingCartIcon").forEach((icon) => {
         if (opened) return;
-        // @ts-ignore
         if (typeof icon.openMiniCart === "function") { icon.openMiniCart(); opened = true; return; }
-        // @ts-ignore
         if (typeof icon.expandMiniCart === "function") { icon.expandMiniCart(); opened = true; return; }
-        // @ts-ignore
         if (typeof icon.expand === "function") { icon.expand(); opened = true; return; }
-        // @ts-ignore
         if (typeof icon.show === "function") { icon.show(); opened = true; return; }
       });
     } catch (_) {}
 
     if (opened) return;
 
-    // @ts-ignore
     if (typeof wixStores.cart.showMiniCart === "function") { wixStores.cart.showMiniCart(); return; }
-    // @ts-ignore
     if (typeof wixStores.cart.openCart === "function") { wixStores.cart.openCart(); return; }
 
     wixLocation.to("/cart");
@@ -372,59 +363,39 @@ async function ensureCorrectState(ms, isNoModel) {
 }
 
 // ================================
-// Docs
+// Product Docs
+// Documents are stored in CMS collection "product_docs" (Import913) as an array
+// of wix:document:// URLs, one row per SKU, uploaded by the sku-doc-uploader pipeline.
 // ================================
-function normalizeDoc(value, fallbackLabel) {
-  if (!value) return null;
 
-  if (Array.isArray(value)) {
-    return value.length ? normalizeDoc(value[0], fallbackLabel) : null;
-  }
+// Converts a wix:document:// URL + model name to a human-readable label.
+// URL format: wix:document://v1/<hash>/<percent-encoded-filename>
+// File naming convention: <model>_<doctype>.pdf  → display as "<Model> <Doctype>"
+// Strips the model prefix from doctype before re-prepending to avoid doubling
+// (e.g. "cDAQ-9178 Specifications.pdf" → "cDAQ-9178 Specifications", not "cDAQ-9178 cDAQ-9178 Specifications").
+function parseDocDisplayName(wixUrl, model) {
+  if (!wixUrl || typeof wixUrl !== "string") return "Document";
+  try {
+    const parts = wixUrl.split("/");
+    const encoded = parts[parts.length - 1] ?? "";
+    const filename = decodeURIComponent(encoded).replace(/\.pdf$/i, "");
 
-  if (typeof value === "string") {
-    const s = value.trim();
-    if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
-      try { return normalizeDoc(JSON.parse(s), fallbackLabel); } catch (_) {}
-    }
-    return { displayName: fallbackLabel, fileUrl: s };
-  }
+    const underscoreIdx = filename.indexOf("_");
+    let doctype = underscoreIdx !== -1 ? filename.slice(underscoreIdx + 1) : filename;
 
-  if (typeof value === "object") {
-    const displayName = value.name || value.fileName || value.originalFileName || fallbackLabel;
-    const fileUrl = value.fileUrl || value.url || null;
-    if (!fileUrl) return null;
-    return { displayName, fileUrl };
-  }
-
-  return null;
-}
-
-function collectDocs(row) {
-  const docs = [];
-  DOC_FIELDS.forEach(({ key, label }) => {
-    const raw = row[key];
-
-    if (Array.isArray(raw)) {
-      raw.forEach((entry, idx) => {
-        const doc = normalizeDoc(entry, `${label} ${idx + 1}`);
-        if (doc) docs.push({ fieldKey: key, label, ...doc });
-      });
-      return;
+    const safeModel = (model && model !== "empty") ? model : "";
+    if (safeModel && doctype.toLowerCase().startsWith(safeModel.toLowerCase())) {
+      doctype = doctype.slice(safeModel.length).replace(/^[\s_-]+/, "");
     }
 
-    const doc = normalizeDoc(raw, label);
-    if (doc) docs.push({ fieldKey: key, label, ...doc });
-  });
-
-  return docs;
-}
-
-function matchesProduct(row, productId) {
-  const ref = row?.[PRODUCT_REF_FIELD];
-  if (!ref) return false;
-  if (typeof ref === "string") return ref === productId;
-  if (typeof ref === "object") return ref._id === productId;
-  return false;
+    const label = doctype
+      .split(/[\s_]+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+    return safeModel ? `${safeModel} ${label}` : label;
+  } catch (_) {
+    return "Document";
+  }
 }
 
 function setRepeaterVisibility(repeater, hasItems) {
@@ -441,6 +412,7 @@ function wireDocsRepeatersOnce() {
   const repeater2 = el("#repeater2");
   if (!repeater1 || !repeater2) return;
 
+  // repeater1 reserved for future use; repeater2 renders the full document list.
   repeater1.onItemReady(($item, itemData) => {
     $item("#filename1").text = itemData.displayName || "";
     $item("#downloadButton1").onClick(() => {
@@ -459,6 +431,8 @@ function wireDocsRepeatersOnce() {
   L("Docs repeaters wired once");
 }
 
+// NOTE: productId param is accepted for API compatibility but unused —
+// query is keyed on extData.sku (set by setPageContentAndStates).
 async function loadDocsForProduct(productId) {
   const repeater1 = el("#repeater1");
   const repeater2 = el("#repeater2");
@@ -475,37 +449,56 @@ async function loadDocsForProduct(productId) {
   setRepeaterVisibility(repeater1, false);
   setRepeaterVisibility(repeater2, false);
 
-  if (!productId) {
-    W("loadDocsForProduct: missing productId");
+  const pageSku = extData?.sku;
+  const model   = extData?.model ?? "";
+
+  if (!pageSku) {
+    W("loadDocsForProduct: missing pageSku (extData not set)");
     return;
   }
 
-  const res = await wixData.query(PRODUCT_DOCS_COLLECTION)
-    .eq(PRODUCT_REF_FIELD, productId)
-    .find();
+  L("loadDocsForProduct query", { collection: PRODUCT_DOCS_COLLECTION, sku: pageSku });
 
-  const rows = (res.items || []).filter((row) => matchesProduct(row, productId));
+  let res;
+  try {
+    res = await wixData.query(PRODUCT_DOCS_COLLECTION)
+      .eq(PRODUCT_SKU_FIELD, pageSku)
+      .find();
+  } catch (e) {
+    W("loadDocsForProduct query failed", e?.message);
+    return;
+  }
 
-  const flatDocs = [];
-  rows.forEach((row) => {
-    collectDocs(row).forEach((d, idx) => {
-      flatDocs.push({
-        _id: `${row._id}-${d.fieldKey}-${idx}`,
-        fieldKey: d.fieldKey,
-        label: d.label,
-        displayName: d.displayName,
-        fileUrl: d.fileUrl
-      });
-    });
-  });
+  L("loadDocsForProduct query result", { totalCount: res?.totalCount, itemCount: res?.items?.length });
 
-  repeater1.data = [];
+  const row = res?.items?.[0];
+  if (!row) {
+    W("loadDocsForProduct: no product_docs entry for sku", pageSku);
+    return;
+  }
+
+  const rawDocs = row[PRODUCT_DOCS_FIELD];
+  L("loadDocsForProduct raw documents field", { type: typeof rawDocs, isArray: Array.isArray(rawDocs), value: rawDocs });
+
+  if (!rawDocs || !Array.isArray(rawDocs) || rawDocs.length === 0) {
+    W("loadDocsForProduct: documents field empty or missing for sku", pageSku);
+    return;
+  }
+
+  const flatDocs = rawDocs
+    .filter(url => url && typeof url === "string")
+    .map((url, idx) => ({
+      _id: `doc-${idx}`,
+      fileUrl: url,
+      displayName: parseDocDisplayName(url, model)
+    }));
+
+  L("loadDocsForProduct parsed", { count: flatDocs.length, sample: flatDocs[0] });
+
   repeater2.data = flatDocs;
+  setRepeaterVisibility(repeater2, flatDocs.length > 0);
 
-  setRepeaterVisibility(repeater1, repeater1.data.length > 0);
-  setRepeaterVisibility(repeater2, repeater2.data.length > 0);
-
-  L("docs bound", { specCount: repeater1.data.length, otherCount: repeater2.data.length });
+  L("docs bound", { docCount: flatDocs.length });
 }
 
 // ================================
