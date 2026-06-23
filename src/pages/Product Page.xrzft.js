@@ -573,6 +573,17 @@ async function applySeo(product) {
 }
 
 // ================================
+// Async helper
+// ================================
+function runAsync(label, work) {
+  Promise.resolve()
+    .then(() => (typeof work === "function" ? work() : work))
+    .catch((e) => {
+      console.error(`${label} failed`, e);
+    });
+}
+
+// ================================
 // Page content
 // ================================
 async function setPageContentAndStates(product, extData, inventoryData) {
@@ -672,10 +683,13 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     if ($w(CYTH_STOCK_ID)) $w(CYTH_STOCK_ID).text = inventoryData.simple_stock;
   }
 
-  await prepareDropdownOnLoad(
-    extData.model,
-    pageSku,
-    extData.optionIdentif || "Select Option"
+  runAsync(
+    "prepareDropdownOnLoad",
+    prepareDropdownOnLoad(
+      extData.model,
+      pageSku,
+      extData.optionIdentif || "Select Option"
+    )
   );
 
   await ensureCorrectState(isNoModel);
@@ -706,25 +720,26 @@ async function setPageContentAndStates(product, extData, inventoryData) {
 // ================================
 // Lifecycle
 // ================================
-$w.onReady(async () => {
-  try {
-    dropdownOptionsLoaded = false;
-    currentProduct = await getCurrentProduct();
-    if (!currentProduct?.sku) return;
+async function initializeProductPage() {
+  dropdownOptionsLoaded = false;
+  currentProduct = await getCurrentProduct();
+  if (!currentProduct?.sku) return;
 
-    wireDropdownNavigation();
-    wireCompetitorHover();
-    wireAddToCart(currentProduct._id);
+  wireDropdownNavigation();
+  wireCompetitorHover();
+  wireAddToCart(currentProduct._id);
 
-    const [extData, inventoryData] = await Promise.all([
-      getExtendedProductData(currentProduct.sku),
-      getPartnerInventoryData(currentProduct.sku)
-    ]);
+  runAsync("applySeo", applySeo(currentProduct));
+  runAsync("loadDocsForProduct", loadDocsForProduct(currentProduct._id));
 
-    await setPageContentAndStates(currentProduct, extData, inventoryData);
-    await applySeo(currentProduct);
-    await loadDocsForProduct(currentProduct._id);
-  } catch (e) {
-    console.error("onReady failed", e);
-  }
+  const [extData, inventoryData] = await Promise.all([
+    getExtendedProductData(currentProduct.sku),
+    getPartnerInventoryData(currentProduct.sku)
+  ]);
+
+  await setPageContentAndStates(currentProduct, extData, inventoryData);
+}
+
+$w.onReady(() => {
+  runAsync("initializeProductPage", initializeProductPage);
 });
