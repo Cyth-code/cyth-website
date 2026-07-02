@@ -1,9 +1,15 @@
 import wixLocation from 'wix-location';
 import { rendering } from 'wix-window'; // guard against SSR double-run
-
-
+import wixSeoFrontend from 'wix-seo-frontend';
 
 $w.onReady(function () {
+
+  // --- Canonical Tag Fix for Paginated Pages (category, blog, search, etc.) ---
+  // Runs on BOTH server (SSR) and browser render, since Googlebot often reads
+  // the SSR-rendered head. Do not move this below the rendering.env guard.
+  setCanonicalForPagination();
+  // --- End Canonical Tag Fix ---
+
   // Menu hover/tab wiring is browser-only; skip during SSR/crawler render to reduce memory/CPU.
   if (rendering && rendering.env !== 'browser') {
     return;
@@ -83,6 +89,28 @@ $w.onReady(function () {
 
   
 });
+
+// ---------------- CANONICAL TAG FOR PAGINATION ----------------
+
+function setCanonicalForPagination() {
+  try {
+    const query = wixLocation.query;   // e.g. { page: '2' }
+    const path = wixLocation.path;     // e.g. ['category', 'pxi-modules']
+
+    // Only act if a ?page= param exists in the URL
+    if (query && query.page) {
+      const cleanPath = '/' + path.join('/');
+      const canonicalUrl = 'https://www.cyth.com' + cleanPath;
+
+      wixSeoFrontend.setLinks([
+        { rel: 'canonical', href: canonicalUrl }
+      ]);
+    }
+    // If no ?page= param, do nothing — Wix's default canonical behavior stands
+  } catch (err) {
+    console.warn('Canonical pagination fix failed:', err);
+  }
+}
 
 // ---------------- TAB QUERY HANDLING ----------------
 
@@ -187,5 +215,3 @@ function setupMenuButton(button, menuPrefix, targetState) {
     }
   });
 }
-
-
