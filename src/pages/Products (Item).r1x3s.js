@@ -34,13 +34,13 @@ const SUBHEADER_ID = "#subHeader";
 const OBS_MESSAGE_ID = "#obsMessage";
 const MODEL_SKU_ID = "#modelSku";
 const PRICE_ID = "#price";
-const ENGINEER_SUPPORT_ID = "#supportText"
+const ENGINEER_SUPPORT_ID = "#text1274"
 
 const DETAILS_ONLY_ID = "#detailsOnly";
 const NO_MODEL_SKU_ID = "#noModelSku";
 const NO_MODEL_PRICE_ID = "#noModelPrice";
 const NO_MODEL_OBS_ID = "#noModelObsMessage";
-const NO_MODEL_ENG_SUPPORT_ID = "#supportTextN";
+const NO_MODEL_ENG_SUPPORT_ID = "#text1274";
 
 // Competitor hover (optional)
 const COMP_BUTTON_ID = "#competitorButton";
