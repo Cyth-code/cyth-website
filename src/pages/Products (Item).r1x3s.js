@@ -603,15 +603,18 @@ if (nLifecycle) {
 }
 
 //set engineering support text
-  const mSupportText = el(ENGINEER_SUPPORT_ID);
-  
-  if (mSupportText)  mSupportText.text = extData.supportInfo || "nothing";
-  L("model support text set", { mSupportText: mSupportText.text });
+  const SHOW_ENGINEERING_SUPPORT = false; // flip to true once logic/message is decided
 
+  const mSupportText = el(ENGINEER_SUPPORT_ID);
   const nSupportText = el(NO_MODEL_ENG_SUPPORT_ID);
-  
-  if (nSupportText)  nSupportText.text = extData.supportInfo || "Complimentary engineering Support with every purchase";
-  L("no model support text set", { nSupportText: nSupportText.text });
+
+  if (SHOW_ENGINEERING_SUPPORT) {
+    if (mSupportText) mSupportText.text = extData.supportInfo || "";
+    if (nSupportText) nSupportText.text = extData.supportInfo || "";
+  } else {
+    if (mSupportText) mSupportText.hide?.();
+    if (nSupportText) nSupportText.hide?.();
+  }  
 
   // Partner inventory
   let cythStockHtml = outOfStockText;
