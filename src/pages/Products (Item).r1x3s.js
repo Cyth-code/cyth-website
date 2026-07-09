@@ -603,18 +603,24 @@ if (nLifecycle) {
 }
 
 //set engineering support text
-  const SHOW_ENGINEERING_SUPPORT = false; // flip to true once logic/message is decided
+  const SHOW_ENGINEERING_SUPPORT = false;
 
   const mSupportText = el(ENGINEER_SUPPORT_ID);
   const nSupportText = el(NO_MODEL_ENG_SUPPORT_ID);
+
+  console.log("DEBUG ENGINEER_SUPPORT_ID:", ENGINEER_SUPPORT_ID);
+  console.log("DEBUG mSupportText found:", !!mSupportText);
+  console.log("DEBUG NO_MODEL_ENG_SUPPORT_ID:", NO_MODEL_ENG_SUPPORT_ID);
+  console.log("DEBUG nSupportText found:", !!nSupportText);
+  console.log("DEBUG SHOW_ENGINEERING_SUPPORT:", SHOW_ENGINEERING_SUPPORT);
 
   if (SHOW_ENGINEERING_SUPPORT) {
     if (mSupportText) mSupportText.text = extData.supportInfo || "";
     if (nSupportText) nSupportText.text = extData.supportInfo || "";
   } else {
-    if (mSupportText) mSupportText.hide?.();
-    if (nSupportText) nSupportText.hide?.();
-  }  
+    if (mSupportText) { mSupportText.hide?.(); console.log("DEBUG: hide() called on mSupportText"); }
+    if (nSupportText) { nSupportText.hide?.(); console.log("DEBUG: hide() called on nSupportText"); }
+  }
 
   // Partner inventory
   let cythStockHtml = outOfStockText;
