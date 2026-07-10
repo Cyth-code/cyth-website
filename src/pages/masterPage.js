@@ -1,5 +1,11 @@
+import wixData from "wix-data";
+import wixLocation from 'wix-location';
+import { rendering } from 'wix-window'; // guard against SSR double-run
+import wixSeoFrontend from 'wix-seo-frontend';
+
 $w.onReady(async function () {
-  // TEMP DIAGNOSTIC - remove after use
+
+  // --- TEMP DIAGNOSTIC - remove after use ---
   if (wixLocation.url.includes("DEBUG_SOFTWARE_LOOKUP")) {
     const searchTerms = ["LabVIEW", "TestStand", "FlexLogger", "InstrumentStudio", "VeriStand", "SystemLink"];
     const results = {};
@@ -17,14 +23,7 @@ $w.onReady(async function () {
     console.log("=== Software Products Found ===");
     console.log(JSON.stringify(results, null, 2));
   }
-});
-
-
-import wixLocation from 'wix-location';
-import { rendering } from 'wix-window'; // guard against SSR double-run
-import wixSeoFrontend from 'wix-seo-frontend';
-
-$w.onReady(function () {
+  // --- END TEMP DIAGNOSTIC ---
 
   // --- Canonical Tag Fix for Paginated Pages (category, blog, search, etc.) ---
   // Runs on BOTH server (SSR) and browser render, since Googlebot often reads
@@ -109,7 +108,6 @@ $w.onReady(function () {
   // Apply ?tab=… from the URL to any Tabs element on the page
   applyTabFromQuery();
 
-  
 });
 
 // ---------------- CANONICAL TAG FOR PAGINATION ----------------
