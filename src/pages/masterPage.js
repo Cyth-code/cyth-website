@@ -1,3 +1,28 @@
+import wixData from "wix-data";
+import wixLocation from "wix-location-frontend";
+
+$w.onReady(async function () {
+  // TEMP DIAGNOSTIC - remove after use
+  if (wixLocation.url.includes("DEBUG_SOFTWARE_LOOKUP")) {
+    const searchTerms = ["LabVIEW", "TestStand", "FlexLogger", "InstrumentStudio", "VeriStand", "SystemLink"];
+    const results = {};
+
+    for (const term of searchTerms) {
+      const productRes = await wixData.query("Stores/Products").contains("name", term).limit(100).find();
+      results[term] = productRes.items.map((item) => ({
+        name: item.name,
+        sku: item.sku,
+        productPageUrl: item.productPageUrl,
+        priceFormatted: item.formattedPrice ?? item.priceData?.formatted?.price
+      }));
+    }
+
+    console.log("=== Software Products Found ===");
+    console.log(JSON.stringify(results, null, 2));
+  }
+});
+
+
 import wixLocation from 'wix-location';
 import { rendering } from 'wix-window'; // guard against SSR double-run
 import wixSeoFrontend from 'wix-seo-frontend';
