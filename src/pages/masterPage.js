@@ -1,6 +1,3 @@
-import wixData from "wix-data";
-import wixLocation from "wix-location-frontend";
-
 $w.onReady(async function () {
   // TEMP DIAGNOSTIC - remove after use
   if (wixLocation.url.includes("DEBUG_SOFTWARE_LOOKUP")) {
