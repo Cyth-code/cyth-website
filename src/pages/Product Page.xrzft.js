@@ -57,15 +57,13 @@ const obsoleteText =
 
 // ================================
 // Product docs config
+// Collection "Import913" (product_docs) stores one row per SKU with a
+// "documents" field containing an array of wix:document:// URLs,
+// uploaded by the sku-doc-uploader pipeline.
 // ================================
-const PRODUCT_DOCS_COLLECTION = "Import911";
-const PRODUCT_REF_FIELD = "reference";
-
-const DOC_FIELDS = [
-  { key: "docsNew", label: "Specifications" },
-  { key: "gettingStarted", label: "Getting Started" },
-  { key: "calibrationProcedure", label: "Calibration Procedure" }
-];
+const PRODUCT_DOCS_COLLECTION = "Import913";
+const PRODUCT_SKU_FIELD = "sku";
+const PRODUCT_DOCS_FIELD = "documents";
 
 // ================================
 // Collection IDs
@@ -74,7 +72,6 @@ const PRODUCTS_EXTENDED_COLLECTION_ID = "Import910";
 const PARTNER_INVENTORY_COLLECTION_ID = "Import912";
 
 const MODEL_OPTIONS_MAX = 50;
-const DOCS_QUERY_LIMIT = 20;
 const GALLERY_MAX_ITEMS = 12;
 
 let currentProduct = null;
@@ -367,74 +364,52 @@ async function ensureCorrectState(isNoModel) {
 }
 
 // ================================
-// Docs
+// Product Docs
+// Documents are stored in CMS collection "product_docs" (Import913) as an array
+// of wix:document:// URLs, one row per SKU, uploaded by the sku-doc-uploader pipeline.
 // ================================
-function normalizeDoc(value, fallbackLabel) {
-  if (!value) return null;
 
-  if (Array.isArray(value)) {
-    return value.length ? normalizeDoc(value[0], fallbackLabel) : null;
-  }
+// Converts a wix:document:// URL + model name to a human-readable label.
+// URL format: wix:document://v1/<hash>/<percent-encoded-filename>
+// File naming convention: <model>_<doctype>.pdf  → display as "<Model> <Doctype>"
+// Strips the model prefix from doctype before re-prepending to avoid doubling
+// (e.g. "cDAQ-9178 Specifications.pdf" → "cDAQ-9178 Specifications", not "cDAQ-9178 cDAQ-9178 Specifications").
+function parseDocDisplayName(wixUrl, model) {
+  if (!wixUrl || typeof wixUrl !== "string") return "Document";
+  try {
+    const parts = wixUrl.split("/");
+    const encoded = parts[parts.length - 1] ?? "";
+    const filename = decodeURIComponent(encoded).replace(/\.pdf$/i, "");
 
-  if (typeof value === "string") {
-    const s = value.trim();
+    const underscoreIdx = filename.indexOf("_");
+    let doctype = underscoreIdx !== -1 ? filename.slice(underscoreIdx + 1) : filename;
 
-    if (
-      (s.startsWith("[") && s.endsWith("]")) ||
-      (s.startsWith("{") && s.endsWith("}"))
-    ) {
-      try {
-        return normalizeDoc(JSON.parse(s), fallbackLabel);
-      } catch (_) {}
+    const safeModel = (model && model !== "empty") ? model : "";
+    if (safeModel && doctype.toLowerCase().startsWith(safeModel.toLowerCase())) {
+      doctype = doctype.slice(safeModel.length).replace(/^[\s_-]+/, "");
     }
 
-    return { displayName: fallbackLabel, fileUrl: s };
+    const label = doctype
+      .split(/[\s_]+/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+    return safeModel ? `${safeModel} ${label}` : label;
+  } catch (_) {
+    return "Document";
   }
-
-  if (typeof value === "object") {
-    const displayName =
-      value.name || value.fileName || value.originalFileName || fallbackLabel;
-    const fileUrl = value.fileUrl || value.url || null;
-    if (!fileUrl) return null;
-    return { displayName, fileUrl };
-  }
-
-  return null;
 }
 
-function collectDocs(row) {
-  const docs = [];
-
-  DOC_FIELDS.forEach(({ key, label }) => {
-    const raw = row[key];
-
-    if (Array.isArray(raw)) {
-      raw.forEach((entry, idx) => {
-        const doc = normalizeDoc(entry, `${label} ${idx + 1}`);
-        if (doc) docs.push({ fieldKey: key, label, ...doc });
-      });
-      return;
-    }
-
-    const doc = normalizeDoc(raw, label);
-    if (doc) docs.push({ fieldKey: key, label, ...doc });
-  });
-
-  return docs;
-}
-
-function matchesProduct(row, productId) {
-  const ref = row?.[PRODUCT_REF_FIELD];
-  if (!ref) return false;
-  if (typeof ref === "string") return ref === productId;
-  if (typeof ref === "object") return ref._id === productId;
-  return false;
+function setRepeaterVisibility(repeater, hasItems) {
+  if (!repeater) return;
+  if (hasItems) repeater.show?.();
+  else repeater.hide?.();
 }
 
 function wireDocsRepeatersOnce() {
   if (docsWiredOnce) return;
   if (!$w("#repeater1") || !$w("#repeater2")) return;
 
+  // repeater1 reserved for future use; repeater2 renders the full document list.
   $w("#repeater1").onItemReady(($item, itemData) => {
     $item("#filename1").text = itemData.displayName || "";
     $item("#downloadButton1").onClick(() => {
@@ -452,9 +427,9 @@ function wireDocsRepeatersOnce() {
   docsWiredOnce = true;
 }
 
-async function loadDocsForProduct(productId) {
+async function loadDocsForProduct(pageSku, model) {
   if (!$w("#repeater1") || !$w("#repeater2")) return;
-  if (!productId) return;
+  if (!pageSku) return;
   if (!isBrowserRender()) return;
 
   wireDocsRepeatersOnce();
@@ -464,35 +439,33 @@ async function loadDocsForProduct(productId) {
   $w("#repeater1").hide();
   $w("#repeater2").hide();
 
-  const res = await wixData
-    .query(PRODUCT_DOCS_COLLECTION)
-    .eq(PRODUCT_REF_FIELD, productId)
-    .limit(DOCS_QUERY_LIMIT)
-    .find();
+  let res;
+  try {
+    res = await wixData
+      .query(PRODUCT_DOCS_COLLECTION)
+      .eq(PRODUCT_SKU_FIELD, pageSku)
+      .find();
+  } catch (e) {
+    console.error("loadDocsForProduct query failed", e);
+    return;
+  }
 
-  const rows = (res.items || []).filter((row) => matchesProduct(row, productId));
+  const row = res?.items?.[0];
+  if (!row) return;
 
-  const flatDocs = [];
-  rows.forEach((row) => {
-    collectDocs(row).forEach((d, idx) => {
-      flatDocs.push({
-        _id: `${row._id}-${d.fieldKey}-${idx}`,
-        fieldKey: d.fieldKey,
-        label: d.label,
-        displayName: d.displayName,
-        fileUrl: d.fileUrl
-      });
-    });
-  });
+  const rawDocs = row[PRODUCT_DOCS_FIELD];
+  if (!rawDocs || !Array.isArray(rawDocs) || rawDocs.length === 0) return;
 
-  const specDoc = flatDocs.find((d) => d.fieldKey === "docsNew") || null;
-  const otherDocs = flatDocs.filter((d) => d.fieldKey !== "docsNew");
+  const flatDocs = rawDocs
+    .filter((url) => url && typeof url === "string")
+    .map((url, idx) => ({
+      _id: `doc-${idx}`,
+      fileUrl: url,
+      displayName: parseDocDisplayName(url, model)
+    }));
 
-  $w("#repeater1").data = specDoc ? [specDoc] : [];
-  $w("#repeater2").data = otherDocs;
-
-  if ($w("#repeater1").data.length > 0) $w("#repeater1").show();
-  if ($w("#repeater2").data.length > 0) $w("#repeater2").show();
+  $w("#repeater2").data = flatDocs;
+  setRepeaterVisibility($w("#repeater2"), flatDocs.length > 0);
 }
 
 // ================================
@@ -723,7 +696,7 @@ $w.onReady(async () => {
 
     await setPageContentAndStates(currentProduct, extData, inventoryData);
     await applySeo(currentProduct);
-    await loadDocsForProduct(currentProduct._id);
+    await loadDocsForProduct(extData.sku, extData.model);
   } catch (e) {
     console.error("onReady failed", e);
   }
