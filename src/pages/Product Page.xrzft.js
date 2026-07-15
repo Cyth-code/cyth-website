@@ -33,6 +33,10 @@ const STORE_DESC_MODEL_ID = "#storeDescModel";
 const STORE_DESC_NO_MODEL_ID = "#storeDescNoModel";
 const LIFECYCLE_NO_MODEL_ID = "#lifecycleNoModel";
 const LIFECYCLE_MODEL_ID = "#lifecycleModel";
+const SUPPORT_INFO_ID = "#supportText";
+const NO_MODEL_SUPPORT_INFO_ID = "#supportTextN";
+
+const DEFAULT_SUPPORT_INFO = "Complimentary engineering support on select products";
 
 // Competitor hover
 const COMP_BUTTON_ID = "#competitorButton";
@@ -180,7 +184,8 @@ async function getExtendedProductData(pageSku) {
       primaryDesc: "empty",
       defaultDesc: "No Description",
       optionIdentif: "",
-      lifecycleStatus: "Contact Cyth For Life Cycle Status Information"
+      lifecycleStatus: "Contact Cyth For Life Cycle Status Information",
+      supportInfo: DEFAULT_SUPPORT_INFO
     };
   }
 
@@ -192,7 +197,8 @@ async function getExtendedProductData(pageSku) {
     defaultDesc: item.desc_original ?? "No Description",
     optionIdentif: item.optionIdentif ?? "",
     lifecycleStatus:
-      item.lifecyclePhase ?? "Contact Cyth For Life Cycle Status Information"
+      item.lifecyclePhase ?? "Contact Cyth For Life Cycle Status Information",
+    supportInfo: item.supportInfo ?? DEFAULT_SUPPORT_INFO
   };
 }
 
@@ -653,6 +659,13 @@ async function setPageContentAndStates(product, extData, inventoryData) {
       $w(ADD_TO_CART_ID).label = "No Longer Manufactured";
       $w(ADD_TO_CART_ID2).label = "No Longer Manufactured";
     }
+  }
+
+  if ($w(SUPPORT_INFO_ID)) {
+    $w(SUPPORT_INFO_ID).text = extData.supportInfo || DEFAULT_SUPPORT_INFO;
+  }
+  if ($w(NO_MODEL_SUPPORT_INFO_ID)) {
+    $w(NO_MODEL_SUPPORT_INFO_ID).text = extData.supportInfo || DEFAULT_SUPPORT_INFO;
   }
 
   let cythStockHtml = outOfStockText;
