@@ -36,8 +36,6 @@ const LIFECYCLE_MODEL_ID = "#lifecycleModel";
 const SUPPORT_INFO_ID = "#supportText";
 const NO_MODEL_SUPPORT_INFO_ID = "#supportTextN";
 
-const DEFAULT_SUPPORT_INFO = "Complimentary engineering support on select products";
-
 // Competitor hover
 const COMP_BUTTON_ID = "#competitorButton";
 const COMP_BOX_ID = "#competitorPriceBox";
@@ -185,7 +183,7 @@ async function getExtendedProductData(pageSku) {
       defaultDesc: "No Description",
       optionIdentif: "",
       lifecycleStatus: "Contact Cyth For Life Cycle Status Information",
-      supportInfo: DEFAULT_SUPPORT_INFO
+      supportInfo: undefined
     };
   }
 
@@ -198,7 +196,7 @@ async function getExtendedProductData(pageSku) {
     optionIdentif: item.optionIdentif ?? "",
     lifecycleStatus:
       item.lifecyclePhase ?? "Contact Cyth For Life Cycle Status Information",
-    supportInfo: item.supportInfo ?? DEFAULT_SUPPORT_INFO
+    supportInfo: item.supportInfo
   };
 }
 
@@ -662,10 +660,10 @@ async function setPageContentAndStates(product, extData, inventoryData) {
   }
 
   if ($w(SUPPORT_INFO_ID)) {
-    $w(SUPPORT_INFO_ID).text = extData.supportInfo || DEFAULT_SUPPORT_INFO;
+    $w(SUPPORT_INFO_ID).text = extData.supportInfo ?? "";
   }
   if ($w(NO_MODEL_SUPPORT_INFO_ID)) {
-    $w(NO_MODEL_SUPPORT_INFO_ID).text = extData.supportInfo || DEFAULT_SUPPORT_INFO;
+    $w(NO_MODEL_SUPPORT_INFO_ID).text = extData.supportInfo ?? "";
   }
 
   let cythStockHtml = outOfStockText;
