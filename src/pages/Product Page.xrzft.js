@@ -307,15 +307,11 @@ async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) 
     return;
   }
 
-  console.log("DROPDOWN DEBUG", {
-    modelName,
-    currentSku,
-    isBrowser: isBrowserRender(),
-    env: rendering?.env
-  });
-
   const siblingCount = await countModelSiblings(modelName);
-  console.log("DROPDOWN DEBUG siblingCount:", siblingCount);
+  if (siblingCount <= 1) {
+    $w(OPTIONS_DROPDOWN_ID).collapse();
+    return;
+  }
 
   $w(OPTIONS_DROPDOWN_ID).placeholder =
     currentOptionLabel || "Select Option";
@@ -326,6 +322,14 @@ async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) 
   }
 
   $w(OPTIONS_DROPDOWN_ID).expand();
+
+  // ---- TEMP DEBUG: remove after diagnosing ----
+  console.log("DROPDOWN post-expand", {
+    collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed,
+    hidden: $w(OPTIONS_DROPDOWN_ID).hidden
+  });
+  // ---- END TEMP DEBUG ----
+
   wireDropdownLazyLoad(modelName, currentSku);
 }
 
