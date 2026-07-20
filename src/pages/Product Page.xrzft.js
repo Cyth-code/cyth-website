@@ -307,11 +307,15 @@ async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) 
     return;
   }
 
+  console.log("DROPDOWN DEBUG", {
+    modelName,
+    currentSku,
+    isBrowser: isBrowserRender(),
+    env: rendering?.env
+  });
+
   const siblingCount = await countModelSiblings(modelName);
-  if (siblingCount <= 1) {
-    $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
-  }
+  console.log("DROPDOWN DEBUG siblingCount:", siblingCount);
 
   $w(OPTIONS_DROPDOWN_ID).placeholder =
     currentOptionLabel || "Select Option";
