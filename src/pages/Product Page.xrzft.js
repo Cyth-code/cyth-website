@@ -291,6 +291,7 @@ async function countModelSiblings(modelName) {
 }
  
 async function setDropdownOptions(modelName, currentSku) {
+  L("setDropdownOptions called", { modelName, currentSku });
   if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
  
   if (!modelName || modelName === "empty") {
@@ -343,6 +344,7 @@ async function setDropdownOptions(modelName, currentSku) {
 async function loadDropdownOptionsOnce(modelName, currentSku) {
   L("loadDropdownOptionsOnce called", { modelName, currentSku, alreadyLoaded: dropdownOptionsLoaded });
   if (dropdownOptionsLoaded) return;
+  L("loading dropdown options (lazy)", { modelName, currentSku });
   dropdownOptionsLoaded = true;
   L("loading dropdown options (lazy)", { modelName, currentSku });
   await setDropdownOptions(modelName, currentSku);
