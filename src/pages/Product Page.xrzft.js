@@ -419,15 +419,10 @@ function setRepeaterVisibility(repeater, hasItems) {
 
 function wireDocsRepeatersOnce() {
   if (docsWiredOnce) return;
-  if (!$w("#repeater1") || !$w("#repeater2")) return;
+  if (!$w("#repeater2")) return;
 
-  // repeater1 reserved for future use; repeater2 renders the full document list.
-  $w("#repeater1").onItemReady(($item, itemData) => {
-    $item("#filename1").text = itemData.displayName || "";
-    $item("#downloadButton1").onClick(() => {
-      if (itemData.fileUrl) wixLocation.to(itemData.fileUrl);
-    });
-  });
+  // repeater1 replaced with spec table. Will be implemented in future
+  
 
   $w("#repeater2").onItemReady(($item, itemData) => {
     $item("#fileName").text = itemData.displayName || "";
@@ -440,15 +435,13 @@ function wireDocsRepeatersOnce() {
 }
 
 async function loadDocsForProduct(pageSku, model) {
-  if (!$w("#repeater1") || !$w("#repeater2")) return;
+  if (!$w("#repeater2")) return;
   if (!pageSku) return;
   if (!isBrowserRender()) return;
 
   wireDocsRepeatersOnce();
 
-  $w("#repeater1").data = [];
   $w("#repeater2").data = [];
-  $w("#repeater1").hide();
   $w("#repeater2").hide();
 
   let res;
