@@ -341,6 +341,7 @@ async function setDropdownOptions(modelName, currentSku) {
 }
  
 async function loadDropdownOptionsOnce(modelName, currentSku) {
+  L("loadDropdownOptionsOnce called", { modelName, currentSku, alreadyLoaded: dropdownOptionsLoaded });
   if (dropdownOptionsLoaded) return;
   dropdownOptionsLoaded = true;
   L("loading dropdown options (lazy)", { modelName, currentSku });
@@ -348,19 +349,22 @@ async function loadDropdownOptionsOnce(modelName, currentSku) {
 }
  
 function wireDropdownLazyLoad(modelName, currentSku) {
+  L("wireDropdownLazyLoad called", { modelName, currentSku });
   const dd = $w(OPTIONS_DROPDOWN_ID);
   if (!dd) return;
  
-  const load = () => loadDropdownOptionsOnce(modelName, currentSku);
+  // const load = () => loadDropdownOptionsOnce(modelName, currentSku);
  
-  if (typeof dd.onFocus === "function") {
-    dd.onFocus(load);
-  }
-  if (typeof dd.onClick === "function") {
-    dd.onClick(load);
-  }
+  // if (typeof dd.onFocus === "function") {
+  //   dd.onFocus(load);
+  // }
+  // if (typeof dd.onClick === "function") {
+  //   dd.onClick(load);
+  // }
+
+  loadDropdownOptionsOnce(modelName, currentSku);
  
-  L("dropdown lazy-load wired", { id: OPTIONS_DROPDOWN_ID });
+  L("dropdown lazy-load wired.", { id: OPTIONS_DROPDOWN_ID });
 }
  
 async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) {
