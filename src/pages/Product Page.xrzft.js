@@ -343,8 +343,9 @@ async function setDropdownOptions(modelName, currentSku) {
 async function loadDropdownOptionsOnce(modelName, currentSku) {
   L("loadDropdownOptionsOnce called", { modelName, currentSku, alreadyLoaded: dropdownOptionsLoaded });
   if (dropdownOptionsLoaded) return;
+  L("loading dropdown options (lazy) 1", { modelName, currentSku });
   dropdownOptionsLoaded = true;
-  L("loading dropdown options (lazy)", { modelName, currentSku });
+  L("loading dropdown options (lazy) 2", { modelName, currentSku });
   await setDropdownOptions(modelName, currentSku);
 }
  
