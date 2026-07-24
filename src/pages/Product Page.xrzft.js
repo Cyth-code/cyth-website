@@ -341,7 +341,9 @@ async function setDropdownOptions(modelName, currentSku) {
  
   L("dropdown configured", {
     placeholder: $w(OPTIONS_DROPDOWN_ID).placeholder,
-    options: dropdownOptions.length
+    options: dropdownOptions.length,
+    collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed,
+    hidden: $w(OPTIONS_DROPDOWN_ID).hidden
   });
 }
  
