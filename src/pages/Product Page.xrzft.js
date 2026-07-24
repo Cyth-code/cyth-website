@@ -291,6 +291,7 @@ async function countModelSiblings(modelName) {
 }
  
 async function setDropdownOptions(modelName, currentSku) {
+  L("setDropdownOptions called", { modelName, currentSku });
   if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
  
   if (!modelName || modelName === "empty") {
