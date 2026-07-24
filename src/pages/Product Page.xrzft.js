@@ -361,16 +361,16 @@ function wireDropdownLazyLoad(modelName, currentSku) {
   const dd = $w(OPTIONS_DROPDOWN_ID);
   if (!dd) return;
  
-  // const load = () => loadDropdownOptionsOnce(modelName, currentSku);
+  const load = () => loadDropdownOptionsOnce(modelName, currentSku);
  
-  // if (typeof dd.onFocus === "function") {
-  //   dd.onFocus(load);
-  // }
-  // if (typeof dd.onClick === "function") {
-  //   dd.onClick(load);
-  // }
+  if (typeof dd.onFocus === "function") {
+    dd.onFocus(load);
+  }
+  if (typeof dd.onClick === "function") {
+    dd.onClick(load);
+  }
 
-  loadDropdownOptionsOnce(modelName, currentSku);
+  
  
   L("dropdown lazy-load wired.", { id: OPTIONS_DROPDOWN_ID });
 }
