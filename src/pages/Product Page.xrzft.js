@@ -890,7 +890,9 @@ $w.onReady(async () => {
     await setPageContentAndStates(currentProduct, extData, inventoryData);
     await applySeo(currentProduct);
     await loadDocsForProduct(extData.sku, extData.model);
- 
+
+    L("dropdown options loaded", { collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed, count: $w(OPTIONS_DROPDOWN_ID).options?.length});
+    $w(OPTIONS_DROPDOWN_ID).expand();
     L("onReady complete");
   } catch (e) {
     E("onReady failed", e);
