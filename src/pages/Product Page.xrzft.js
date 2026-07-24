@@ -300,11 +300,15 @@ async function setDropdownOptions(modelName, currentSku) {
     return;
   }
  
+  L("querying options for model", { modelName, currentSku });
   const results = await wixData
     .query(PRODUCTS_EXTENDED_COLLECTION_ID)
     .eq("model", modelName)
     .limit(MODEL_OPTIONS_MAX)
-    .find();
+    .find().then((results) => {
+      L("options query results", { modelName, count: results.items?.length });
+      return results;
+    });
  
   const items = results.items || [];
   L("options query results", { modelName, count: items.length });
@@ -344,9 +348,9 @@ async function setDropdownOptions(modelName, currentSku) {
 async function loadDropdownOptionsOnce(modelName, currentSku) {
   L("loadDropdownOptionsOnce called", { modelName, currentSku, alreadyLoaded: dropdownOptionsLoaded });
   if (dropdownOptionsLoaded) return;
-  L("loading dropdown options (lazy) 1", { modelName, currentSku });
+  L("loading dropdown options (lazy)", { modelName, currentSku });
   dropdownOptionsLoaded = true;
-  L("loading dropdown options (lazy) 2", { modelName, currentSku });
+  L("loading dropdown options (lazy)", { modelName, currentSku });
   await setDropdownOptions(modelName, currentSku);
 }
  
