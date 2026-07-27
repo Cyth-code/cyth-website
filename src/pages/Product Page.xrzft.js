@@ -772,8 +772,6 @@ async function setPageContentAndStates(product, extData, inventoryData) {
   // before expand() is called — changeState resets child element states.
   L("multistate decision", { isNoModel });
   await ensureCorrectState(isNoModel);
-
-  await prepareDropdownOnLoad(extData.model, pageSku);
  
   if (isNoModel) {
     if ($w(DETAILS_ONLY_ID)) $w(DETAILS_ONLY_ID).text = extData.defaultDesc;
@@ -829,6 +827,9 @@ $w.onReady(async () => {
     ]);
  
     await setPageContentAndStates(currentProduct, extData, inventoryData);
+    // Expand the dropdown after setPageContentAndStates fully resolves so the
+    // multistate switch (changeState) can't reset the child expand state.
+    await prepareDropdownOnLoad(extData.model, currentProduct.sku);
     await applySeo(currentProduct);
     await loadDocsForProduct(extData.sku, extData.model);
 
