@@ -351,11 +351,14 @@ async function prepareDropdownOnLoad(modelName, currentSku) {
 
   await setDropdownOptions(modelName, currentSku);
 
-  // Setting .options triggers a Wix internal re-render that resets the
-  // collapsed state. Re-expand after a tick to fire after that cycle settles.
-  setTimeout(() => {
-    try { $w(OPTIONS_DROPDOWN_ID).expand(); } catch (_) {}
-  }, 300);
+  // Wix's product page reconciliation re-applies the default collapsed state
+  // after our expand() call. Retry at multiple delay points to win the race
+  // no matter when that reconciliation fires (confirmed via DOM inspection).
+  for (const ms of [100, 500, 1000, 2000, 3500]) {
+    setTimeout(() => {
+      try { $w(OPTIONS_DROPDOWN_ID).expand(); } catch (_) {}
+    }, ms);
+  }
 }
  
 function wireDropdownNavigation() {
