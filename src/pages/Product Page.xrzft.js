@@ -86,7 +86,6 @@ const GALLERY_MAX_ITEMS = 12;
  
 let currentProduct = null;
 let docsWiredOnce = false;
-let dropdownOptionsLoaded = false;
  
 // ================================
 // Safe element getter
@@ -278,18 +277,6 @@ async function getPartnerInventoryData(pageSku) {
 // Uses custom collection for sibling SKUs, then Stores/Products lookup
 // only for selected option navigation.
 // ================================
-async function countModelSiblings(modelName) {
-  const result = await wixData
-    .query(PRODUCTS_EXTENDED_COLLECTION_ID)
-    .eq("model", modelName)
-    .limit(1)
-    .count();
- 
-  const count = typeof result === "number" ? result : 0;
-  L("model siblings count", { modelName, count });
-  return count;
-}
- 
 async function setDropdownOptions(modelName, currentSku) {
   L("setDropdownOptions called", { modelName, currentSku });
   if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
@@ -347,67 +334,24 @@ async function setDropdownOptions(modelName, currentSku) {
   });
 }
  
-async function loadDropdownOptionsOnce(modelName, currentSku) {
-  L("loadDropdownOptionsOnce called", { modelName, currentSku, alreadyLoaded: dropdownOptionsLoaded });
-  if (dropdownOptionsLoaded) return;
-  L("loading dropdown options (lazy)", { modelName, currentSku });
-  dropdownOptionsLoaded = true;
-  L("loading dropdown options (lazy)", { modelName, currentSku });
-  await setDropdownOptions(modelName, currentSku);
-}
- 
-function wireDropdownLazyLoad(modelName, currentSku) {
-  L("wireDropdownLazyLoad called", { modelName, currentSku });
-  const dd = $w(OPTIONS_DROPDOWN_ID);
-  if (!dd) return;
- 
-  const load = () => loadDropdownOptionsOnce(modelName, currentSku);
- 
-  if (typeof dd.onFocus === "function") {
-    dd.onFocus(load);
-  }
-  if (typeof dd.onClick === "function") {
-    dd.onClick(load);
-  }
-
-  
- 
-  L("dropdown lazy-load wired.", { id: OPTIONS_DROPDOWN_ID });
-}
- 
-async function prepareDropdownOnLoad(modelName, currentSku, currentOptionLabel) {
+async function prepareDropdownOnLoad(modelName, currentSku) {
   if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
- 
+
   if (!modelName || modelName === "empty") {
     L("dropdown collapsed (no model)", { modelName });
     $w(OPTIONS_DROPDOWN_ID).collapse();
     return;
   }
- 
-  const siblingCount = await countModelSiblings(modelName);
-  if (siblingCount <= 1) {
-    L("dropdown collapsed (no siblings)", { modelName, siblingCount });
-    $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
-  }
- 
-  $w(OPTIONS_DROPDOWN_ID).placeholder =
-    currentOptionLabel || "Select Option";
- 
+
   if (!isBrowserRender()) {
     L("dropdown collapsed (non-browser render)");
     $w(OPTIONS_DROPDOWN_ID).collapse();
     return;
   }
- 
-  $w(OPTIONS_DROPDOWN_ID).expand();
- 
-  L("dropdown expanded", {
-    collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed,
-    hidden: $w(OPTIONS_DROPDOWN_ID).hidden
-  });
- 
-  wireDropdownLazyLoad(modelName, currentSku);
+
+  // Load all sibling options now so the dropdown is fully populated before
+  // the user ever interacts with it. setDropdownOptions handles expand/collapse.
+  await setDropdownOptions(modelName, currentSku);
 }
  
 function wireDropdownNavigation() {
@@ -454,7 +398,7 @@ async function changeStateVerified(ms, stateId) {
   const before = ms.currentState?.id;
  
   try {
-    await ms.changeState(stateId);
+    await ms.changeState(stateId);//
   } catch (err) {
     const msg = err?.message || String(err);
     return { ok: false, stateId, message: msg, before, after: ms.currentState?.id };
@@ -824,11 +768,7 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     if ($w(CYTH_STOCK_ID)) $w(CYTH_STOCK_ID).text = inventoryData.simple_stock;
   }
  
-  await prepareDropdownOnLoad(
-    extData.model,
-    pageSku,
-    extData.optionIdentif || "Select Option"
-  );
+  await prepareDropdownOnLoad(extData.model, pageSku);
  
   L("multistate decision", { isNoModel });
   await ensureCorrectState(isNoModel);
@@ -871,7 +811,6 @@ $w.onReady(async () => {
       "#repeater2"
     ]);
  
-    dropdownOptionsLoaded = false;
     currentProduct = await getCurrentProduct();
     if (!currentProduct?.sku) {
       W("No sku on current product; aborting onReady");
@@ -891,8 +830,6 @@ $w.onReady(async () => {
     await applySeo(currentProduct);
     await loadDocsForProduct(extData.sku, extData.model);
 
-    L("dropdown options loaded", { collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed, count: $w(OPTIONS_DROPDOWN_ID).options?.length});
-    $w(OPTIONS_DROPDOWN_ID).expand();
     L("onReady complete");
   } catch (e) {
     E("onReady failed", e);
