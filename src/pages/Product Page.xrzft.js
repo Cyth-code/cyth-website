@@ -305,13 +305,11 @@ async function setDropdownOptions(modelName, currentSku) {
     return;
   }
  
-  $w(OPTIONS_DROPDOWN_ID).expand();
- 
   const dropdownOptions = items.map((item) => ({
     label: item.optionIdentif ?? "No Modifications",
     value: item.sku
   }));
- 
+
   let pageOptionIndex = 0;
   for (let i = 0; i < dropdownOptions.length; i++) {
     if (dropdownOptions[i].value === currentSku) {
@@ -319,12 +317,14 @@ async function setDropdownOptions(modelName, currentSku) {
       break;
     }
   }
- 
+
   $w(OPTIONS_DROPDOWN_ID).placeholder =
     dropdownOptions[pageOptionIndex]?.label || "Select Option";
- 
+
   dropdownOptions.splice(pageOptionIndex, 1);
   $w(OPTIONS_DROPDOWN_ID).options = dropdownOptions;
+  // Expand only after options are fully set to avoid a blank black-box flash.
+  $w(OPTIONS_DROPDOWN_ID).expand();
  
   L("dropdown configured", {
     placeholder: $w(OPTIONS_DROPDOWN_ID).placeholder,
