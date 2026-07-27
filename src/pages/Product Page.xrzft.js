@@ -349,9 +349,13 @@ async function prepareDropdownOnLoad(modelName, currentSku) {
     return;
   }
 
-  // Load all sibling options now so the dropdown is fully populated before
-  // the user ever interacts with it. setDropdownOptions handles expand/collapse.
   await setDropdownOptions(modelName, currentSku);
+
+  // Setting .options triggers a Wix internal re-render that resets the
+  // collapsed state. Re-expand after a tick to fire after that cycle settles.
+  setTimeout(() => {
+    try { $w(OPTIONS_DROPDOWN_ID).expand(); } catch (_) {}
+  }, 300);
 }
  
 function wireDropdownNavigation() {
