@@ -768,10 +768,12 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     if ($w(CYTH_STOCK_ID)) $w(CYTH_STOCK_ID).text = inventoryData.simple_stock;
   }
  
-  await prepareDropdownOnLoad(extData.model, pageSku);
- 
+  // Switch multistate first so the dropdown lives in an active panel
+  // before expand() is called — changeState resets child element states.
   L("multistate decision", { isNoModel });
   await ensureCorrectState(isNoModel);
+
+  await prepareDropdownOnLoad(extData.model, pageSku);
  
   if (isNoModel) {
     if ($w(DETAILS_ONLY_ID)) $w(DETAILS_ONLY_ID).text = extData.defaultDesc;
