@@ -21,14 +21,13 @@ $w.onReady(function () {
       }
       $w("#form1")?.setFieldValues?.(formValues);
 
-      // Temporarily commented out for testing
-      // const saveMySpotValues = {
-      //   "event_name": currentEvent.title || '',
-      //   "event_date": currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
-      //   "event_location": currentEvent.location || '',
-      //   "booth_number": currentEvent.boothNumber || ''
-      // }
-      // $w("#form2")?.setFieldValues?.(saveMySpotValues);
+      const saveMySpotValues = {
+        "event_name": currentEvent.title || '',
+        "event_date": currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
+        "event_location": currentEvent.location || '',
+        "booth_number": currentEvent.boothNumber || ''
+      }
+      $w("#form2")?.setFieldValues?.(saveMySpotValues);
 
     } catch (err) { E("Events (Item)", err) }
   })
