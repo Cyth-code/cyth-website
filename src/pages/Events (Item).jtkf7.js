@@ -27,7 +27,10 @@ $w.onReady(function () {
         "event_location": currentEvent.location || '',
         "booth_number": currentEvent.boothNumber || ''
       }
-      $w("#form2")?.setFieldValues?.(saveMySpotValues);
+
+      $w("#form2")?.onSubmit?.(() => {
+        $w("#form2").setFieldValues(saveMySpotValues);
+      });
 
     } catch (err) { E("Events (Item)", err) }
   })
