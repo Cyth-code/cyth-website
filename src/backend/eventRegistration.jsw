@@ -1,0 +1,8 @@
+import wixData from 'wix-data';
+
+export async function insertEventRegistrationTag(data) {
+  return wixData.insert('EventRegistrationTags', {
+    ...data,
+    submittedDate: new Date()
+  }, { suppressAuth: true });
+}
