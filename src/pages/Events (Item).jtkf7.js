@@ -1,4 +1,5 @@
 import { L, E } from 'backend/logger.web';
+import { insertEventRegistrationTag } from 'backend/eventRegistration.jsw';
 
 $w.onReady(function () {
   $w("#dynamicDataset").onReady(() => {
@@ -21,16 +22,22 @@ $w.onReady(function () {
       }
       $w("#form1")?.setFieldValues?.(formValues);
 
-      const saveMySpotValues = {
-        "event_name": currentEvent.title || '',
-        "event_date": currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
-        "event_location": currentEvent.location || '',
-        "booth_number": currentEvent.boothNumber || ''
-      }
-
       $w("#form2")?.onSubmit?.(() => {
-        console.log("form2 submit fired, setting values:", saveMySpotValues);
-        $w("#form2").setFieldValues(saveMySpotValues);
+        try {
+          const visitorFields = $w("#form2").getFieldValues();
+
+          insertEventRegistrationTag({
+            email: visitorFields.email_c840 || '',
+            firstName: visitorFields.first_name_e71b || '',
+            lastName: visitorFields.last_name_1971 || '',
+            eventName: currentEvent.title || '',
+            eventDate: currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
+            eventLocation: currentEvent.location || '',
+            boothNumber: currentEvent.boothNumber || ''
+          });
+        } catch (innerErr) {
+          E("Events (Item) - tag insert", innerErr);
+        }
       });
 
     } catch (err) { E("Events (Item)", err) }
