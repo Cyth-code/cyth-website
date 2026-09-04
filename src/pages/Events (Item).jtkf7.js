@@ -30,6 +30,7 @@ $w.onReady(function () {
             email: visitorFields.email_c840 || '',
             firstName: visitorFields.first_name_e71b || '',
             lastName: visitorFields.last_name_1971 || '',
+            companyName: visitorFields.company_name_5256 || '',
             eventName: currentEvent.title || '',
             eventDate: currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
             eventLocation: currentEvent.location || '',
