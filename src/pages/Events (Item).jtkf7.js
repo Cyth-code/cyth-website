@@ -29,6 +29,7 @@ $w.onReady(function () {
       }
 
       $w("#form2")?.onSubmit?.(() => {
+        console.log("form2 submit fired, setting values:", saveMySpotValues);
         $w("#form2").setFieldValues(saveMySpotValues);
       });
 
