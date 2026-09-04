@@ -22,6 +22,29 @@ $w.onReady(function () {
       }
       $w("#form1")?.setFieldValues?.(formValues);
 
+      // Connect with our team (form1)
+      $w("#form1")?.onSubmit?.(() => {
+        try {
+          const visitorFields = $w("#form1").getFieldValues();
+
+          insertEventRegistrationTag({
+            email: visitorFields.email_c840 || '',
+            firstName: visitorFields.first_name_e71b || '',
+            lastName: visitorFields.last_name_1971 || '',
+            companyName: visitorFields.company_name_5256 || '',
+            interestedIn: visitorFields.i_m_interested_in || '',
+            eventName: currentEvent.title || '',
+            eventDate: currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
+            eventLocation: currentEvent.location || '',
+            boothNumber: currentEvent.boothNumber || '',
+            sourceForm: 'Connect with our team'
+          });
+        } catch (innerErr) {
+          E("Events (Item) - form1 tag insert", innerErr);
+        }
+      });
+
+      // Save my spot (form2)
       $w("#form2")?.onSubmit?.(() => {
         try {
           const visitorFields = $w("#form2").getFieldValues();
@@ -34,10 +57,11 @@ $w.onReady(function () {
             eventName: currentEvent.title || '',
             eventDate: currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
             eventLocation: currentEvent.location || '',
-            boothNumber: currentEvent.boothNumber || ''
+            boothNumber: currentEvent.boothNumber || '',
+            sourceForm: 'Save my spot'
           });
         } catch (innerErr) {
-          E("Events (Item) - tag insert", innerErr);
+          E("Events (Item) - form2 tag insert", innerErr);
         }
       });
 
