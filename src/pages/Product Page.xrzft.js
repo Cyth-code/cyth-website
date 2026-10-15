@@ -371,6 +371,7 @@ async function prepareDropdownOnLoad(modelName, currentSku) {
       } catch (e) { W("dropdown check failed", e?.message); }
     }, ms);
   }
+}
  
 function wireDropdownNavigation() {
   if (!$w(OPTIONS_DROPDOWN_ID)) return;
