@@ -277,14 +277,16 @@ async function getPartnerInventoryData(pageSku) {
 // Uses custom collection for sibling SKUs, then Stores/Products lookup
 // only for selected option navigation.
 // ================================
+
+// BUG 1 FIX: returns true only when the dropdown has real options and should show.
 async function setDropdownOptions(modelName, currentSku) {
   L("setDropdownOptions called", { modelName, currentSku });
-  if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
+  if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return false; }
  
   if (!modelName || modelName === "empty") {
     L("dropdown collapsed (no model)", { modelName });
     $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
+    return false;
   }
  
   L("querying options for model", { modelName, currentSku });
@@ -292,17 +294,15 @@ async function setDropdownOptions(modelName, currentSku) {
     .query(PRODUCTS_EXTENDED_COLLECTION_ID)
     .eq("model", modelName)
     .limit(MODEL_OPTIONS_MAX)
-    .find().then((results) => {
-      L("options query results", { modelName, count: results.items?.length });
-      return results;
-    });
+    .find();
  
   const items = results.items || [];
   L("options query results", { modelName, count: items.length });
  
   if (items.length <= 1) {
+    L("dropdown collapsed (only one SKU for this model)", { modelName });
     $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
+    return false;
   }
  
   const dropdownOptions = items.map((item) => ({
@@ -332,6 +332,8 @@ async function setDropdownOptions(modelName, currentSku) {
     collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed,
     hidden: $w(OPTIONS_DROPDOWN_ID).hidden
   });
+
+  return true;
 }
  
 async function prepareDropdownOnLoad(modelName, currentSku) {
@@ -349,7 +351,13 @@ async function prepareDropdownOnLoad(modelName, currentSku) {
     return;
   }
 
-  await setDropdownOptions(modelName, currentSku);
+  const shouldShow = await setDropdownOptions(modelName, currentSku);
+
+  // BUG 1 FIX: never re-expand a dropdown we intentionally collapsed.
+  if (!shouldShow) {
+    L("dropdown retries skipped (collapsed on purpose)");
+    return;
+  }
 
   // Wix's product page reconciliation re-applies the default collapsed CSS rule
   // after our expand() call. Retry at multiple delay points to win the race
@@ -405,7 +413,7 @@ async function changeStateVerified(ms, stateId) {
   const before = ms.currentState?.id;
  
   try {
-    await ms.changeState(stateId);//
+    await ms.changeState(stateId);
   } catch (err) {
     const msg = err?.message || String(err);
     return { ok: false, stateId, message: msg, before, after: ms.currentState?.id };
