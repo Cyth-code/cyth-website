@@ -362,12 +362,15 @@ async function prepareDropdownOnLoad(modelName, currentSku) {
   // Wix's product page reconciliation re-applies the default collapsed CSS rule
   // after our expand() call. Retry at multiple delay points to win the race
   // no matter when that reconciliation fires (confirmed via DOM inspection).
-  for (const ms of [100, 500, 1000, 2000, 3500]) {
+   for (const ms of [100, 500, 1000, 2000, 3500, 6000, 9000]) {
     setTimeout(() => {
-      try { $w(OPTIONS_DROPDOWN_ID).expand(); } catch (_) {}
+      try {
+        const dd = $w(OPTIONS_DROPDOWN_ID);
+        L(`dropdown check ${ms}ms`, { collapsed: dd.collapsed, hidden: dd.hidden, isVisible: dd.isVisible });
+        dd.expand();
+      } catch (e) { W("dropdown check failed", e?.message); }
     }, ms);
   }
-}
  
 function wireDropdownNavigation() {
   if (!$w(OPTIONS_DROPDOWN_ID)) return;
