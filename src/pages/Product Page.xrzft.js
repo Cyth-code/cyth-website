@@ -336,41 +336,23 @@ async function setDropdownOptions(modelName, currentSku) {
   return true;
 }
  
+// DROPDOWN SYNC FIX: identical logic on server (SSR) and browser render,
+// so the server HTML and the browser agree. No SSR-only collapse, no timers.
 async function prepareDropdownOnLoad(modelName, currentSku) {
   if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return; }
 
-  if (!modelName || modelName === "empty") {
-    L("dropdown collapsed (no model)", { modelName });
+  L("prepareDropdownOnLoad", { env: rendering?.env, modelName, currentSku });
+
+  let shouldShow = false;
+  try {
+    shouldShow = await setDropdownOptions(modelName, currentSku);
+  } catch (e) {
+    E("setDropdownOptions failed", e);
     $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
   }
 
-  if (!isBrowserRender()) {
-    L("dropdown collapsed (non-browser render)");
-    $w(OPTIONS_DROPDOWN_ID).collapse();
-    return;
-  }
-
-  const shouldShow = await setDropdownOptions(modelName, currentSku);
-
-  // BUG 1 FIX: never re-expand a dropdown we intentionally collapsed.
-  if (!shouldShow) {
-    L("dropdown retries skipped (collapsed on purpose)");
-    return;
-  }
-
-  // Wix's product page reconciliation re-applies the default collapsed CSS rule
-  // after our expand() call. Retry at multiple delay points to win the race
-  // no matter when that reconciliation fires (confirmed via DOM inspection).
-   for (const ms of [100, 500, 1000, 2000, 3500, 6000, 9000]) {
-    setTimeout(() => {
-      try {
-        const dd = $w(OPTIONS_DROPDOWN_ID);
-        L(`dropdown check ${ms}ms`, { collapsed: dd.collapsed, hidden: dd.hidden, isVisible: dd.isVisible });
-        dd.expand();
-      } catch (e) { W("dropdown check failed", e?.message); }
-    }, ms);
-  }
+  const dd = $w(OPTIONS_DROPDOWN_ID);
+  L("dropdown final", { env: rendering?.env, shouldShow, collapsed: dd.collapsed, hidden: dd.hidden });
 }
  
 function wireDropdownNavigation() {
@@ -694,10 +676,19 @@ async function setPageContentAndStates(product, extData, inventoryData) {
   const storeDescText = String(storeDescRaw || "");
   const descForHtml = String(storeDescHtml || storeDescRaw || "");
  
+  // BUG 2 FIX: layout depends on the model only. A missing details/primaryDesc
+  // no longer forces the no-model layout (which has no dropdown), so every SKU
+  // listed in a model's dropdown lands on the model layout.
   const isNoModel =
-    extData.model === "empty" ||
-    extData.details === "empty" ||
-    extData.primaryDesc === "empty";
+    !extData.model ||
+    String(extData.model).trim() === "" ||
+    extData.model === "empty";
+  L("model decision inputs", {
+    model: extData.model,
+    details: extData.details,
+    primaryDesc: extData.primaryDesc,
+    isNoModel
+  });
  
   const descTargetId = isNoModel ? STORE_DESC_NO_MODEL_ID : STORE_DESC_MODEL_ID;
   if ($w(descTargetId)) {
@@ -710,7 +701,7 @@ async function setPageContentAndStates(product, extData, inventoryData) {
  
   if ($w(PREHEADER_ID)) {
     $w(PREHEADER_ID).text =
-      extData.model !== "empty" && extData.model !== ""
+      !isNoModel
         ? `${extData.model} | ${extData.sku}`
         : `${extData.sku}`;
   }
@@ -799,8 +790,9 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     if ($w(NO_MODEL_OBS_ID)) $w(NO_MODEL_OBS_ID).html = cythStockHtml;
   } else {
     if ($w(PAGE_NAME_ID)) $w(PAGE_NAME_ID).text = extData.model || "";
-    if ($w(PRIMARY_DESC_ID)) $w(PRIMARY_DESC_ID).text = extData.primaryDesc || "";
-    if ($w(SUBHEADER_ID)) $w(SUBHEADER_ID).text = extData.details || "";
+    // BUG 2 FIX: show blank instead of the literal "empty" when a field is missing.
+    if ($w(PRIMARY_DESC_ID)) $w(PRIMARY_DESC_ID).text = extData.primaryDesc === "empty" ? "" : (extData.primaryDesc || "");
+    if ($w(SUBHEADER_ID)) $w(SUBHEADER_ID).text = extData.details === "empty" ? "" : (extData.details || "");
     if ($w(OBS_MESSAGE_ID)) $w(OBS_MESSAGE_ID).html = cythStockHtml;
     if ($w(MODEL_SKU_ID)) $w(MODEL_SKU_ID).text = `SKU: ${pageSku}`;
     if ($w(PRICE_ID)) $w(PRICE_ID).text = `Price: ${priceFormatted || ""}`;
