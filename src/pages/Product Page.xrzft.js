@@ -278,64 +278,77 @@ async function getPartnerInventoryData(pageSku) {
 // only for selected option navigation.
 // ================================
 
-// BUG 1 FIX: returns true only when the dropdown has real options and should show.
+// Dropdown rule: shown only when the current SKU AND at least one other SKU
+// share the same Model and BOTH have Model + OptionIdentif filled in.
+// Rows with a blank OptionIdentif are left out of the dropdown entirely.
+// Returns true only when the dropdown should be visible.
+function hasText(v) {
+  return v !== null && v !== undefined && String(v).trim() !== "" && String(v).trim() !== "empty";
+}
+
 async function setDropdownOptions(modelName, currentSku) {
   L("setDropdownOptions called", { modelName, currentSku });
-  if (!$w(OPTIONS_DROPDOWN_ID)) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return false; }
- 
-  if (!modelName || modelName === "empty") {
+  const dd = $w(OPTIONS_DROPDOWN_ID);
+  if (!dd) { W("Dropdown not found", OPTIONS_DROPDOWN_ID); return false; }
+
+  if (!hasText(modelName)) {
     L("dropdown collapsed (no model)", { modelName });
-    $w(OPTIONS_DROPDOWN_ID).collapse();
+    dd.collapse();
     return false;
   }
- 
-  L("querying options for model", { modelName, currentSku });
+
   const results = await wixData
     .query(PRODUCTS_EXTENDED_COLLECTION_ID)
     .eq("model", modelName)
     .limit(MODEL_OPTIONS_MAX)
     .find();
- 
+
   const items = results.items || [];
-  L("options query results", { modelName, count: items.length });
- 
-  if (items.length <= 1) {
-    L("dropdown collapsed (only one SKU for this model)", { modelName });
-    $w(OPTIONS_DROPDOWN_ID).collapse();
+  const eligible = items.filter((i) => hasText(i.sku) && hasText(i.optionIdentif));
+  const current = String(currentSku ?? "").trim();
+  const currentItem = eligible.find((i) => String(i.sku).trim() === current);
+
+  L("options query results", {
+    modelName,
+    count: items.length,
+    eligible: eligible.length,
+    currentHasOptionIdentif: !!currentItem
+  });
+
+  if (!currentItem || eligible.length < 2) {
+    L("dropdown collapsed (needs current SKU + another SKU with OptionIdentif)", { modelName });
+    dd.collapse();
     return false;
   }
- 
-  const dropdownOptions = items.map((item) => ({
-    label: item.optionIdentif ?? "No Modifications",
-    value: item.sku
-  }));
 
-  let pageOptionIndex = 0;
-  for (let i = 0; i < dropdownOptions.length; i++) {
-    if (dropdownOptions[i].value === currentSku) {
-      pageOptionIndex = i;
-      break;
-    }
-  }
+  // If two SKUs share the same OptionIdentif, append the SKU so they can be told apart.
+  const labelOf = (i) => String(i.optionIdentif).trim();
+  const counts = {};
+  eligible.forEach((i) => { counts[labelOf(i)] = (counts[labelOf(i)] || 0) + 1; });
+  const toOption = (i) => ({
+    label: counts[labelOf(i)] > 1 ? `${labelOf(i)} (${String(i.sku).trim()})` : labelOf(i),
+    value: String(i.sku).trim()
+  });
 
-  $w(OPTIONS_DROPDOWN_ID).placeholder =
-    dropdownOptions[pageOptionIndex]?.label || "Select Option";
+  const placeholder = toOption(currentItem).label;
+  const dropdownOptions = eligible
+    .filter((i) => String(i.sku).trim() !== current)
+    .map(toOption);
 
-  dropdownOptions.splice(pageOptionIndex, 1);
-  $w(OPTIONS_DROPDOWN_ID).options = dropdownOptions;
-  // Expand only after options are fully set to avoid a blank black-box flash.
-  $w(OPTIONS_DROPDOWN_ID).expand();
- 
+  dd.placeholder = placeholder;
+  dd.options = dropdownOptions;
+  dd.expand();
+
   L("dropdown configured", {
-    placeholder: $w(OPTIONS_DROPDOWN_ID).placeholder,
+    placeholder,
     options: dropdownOptions.length,
-    collapsed: $w(OPTIONS_DROPDOWN_ID).collapsed,
-    hidden: $w(OPTIONS_DROPDOWN_ID).hidden
+    collapsed: dd.collapsed,
+    hidden: dd.hidden
   });
 
   return true;
 }
- 
+
 // DROPDOWN SYNC FIX: identical logic on server (SSR) and browser render,
 // so the server HTML and the browser agree. No SSR-only collapse, no timers.
 async function prepareDropdownOnLoad(modelName, currentSku) {
