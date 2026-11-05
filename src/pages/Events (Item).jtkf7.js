@@ -18,15 +18,19 @@ $w.onReady(function () {
       }
 
       // Intro button: show only if enabled AND the form section is showing
-      const formSection = $w("#section71"); // section containing the target form
-      const formIsShowing = !formSection.collapsed;
+      try {
+        const formSection = $w("#section71"); // section containing the target form
+        const formIsShowing = !formSection.collapsed;
 
-      if (!currentEvent?.showFormButton || !formIsShowing) {
-        $w("#introButton").collapse?.();
-      } else {
-        $w("#introButton").onClick(() => {
-          formSection.scrollTo();
-        });
+        if (!currentEvent?.showFormButton || !formIsShowing) {
+          $w("#introButton").collapse?.();
+        } else {
+          $w("#introButton").onClick(() => {
+            formSection.scrollTo();
+          });
+        }
+      } catch (btnErr) {
+        E("Events (Item) - intro button", btnErr);
       }
 
       const formValues = {
@@ -59,4 +63,24 @@ $w.onReady(function () {
       // Save my spot (form2)
       $w("#form2")?.onSubmit?.(() => {
         try {
-          const visitorFields =
+          const visitorFields = $w("#form2").getFieldValues();
+
+          insertEventRegistrationTag({
+            email: visitorFields.email_c840 || '',
+            firstName: visitorFields.first_name_e71b || '',
+            lastName: visitorFields.last_name_1971 || '',
+            companyName: visitorFields.company_name_5256 || '',
+            eventName: currentEvent.title || '',
+            eventDate: currentEvent.date ? new Date(currentEvent.date).toDateString() : '',
+            eventLocation: currentEvent.location || '',
+            boothNumber: currentEvent.boothNumber || '',
+            sourceForm: 'Save my spot'
+          });
+        } catch (innerErr) {
+          E("Events (Item) - form2 tag insert", innerErr);
+        }
+      });
+
+    } catch (err) { E("Events (Item)", err) }
+  })
+});
