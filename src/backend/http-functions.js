@@ -70,3 +70,34 @@ export function post_commitSkuDocs(request) {
       });
   });
 }
+
+// Returns a pre-signed upload URL for large images (>700KB).
+export function post_getImageUploadUrl(request) {
+  if (!checkAuth(request)) return forbidden();
+
+  return request.body.json().then((body) => {
+    return mediaManager.getUploadUrl("/product-images/" + body.sku, {
+      mediaOptions: { mimeType: body.mimeType || "image/jpeg", mediaType: "image" },
+      metadataOptions: { isPrivate: false, isVisitorUpload: false },
+    }).then((result) => ok({ body: JSON.stringify(result) }));
+  });
+}
+
+// Uploads a small image (<700KB) via base64 POST body.
+// Returns the wix:image:// URI to store in media_assets.wix_url.
+export function post_uploadImage(request) {
+  if (!checkAuth(request)) return forbidden();
+
+  return request.body.json().then((body) => {
+    const buffer = Buffer.from(body.fileBase64, "base64");
+    return mediaManager.upload(
+      "/product-images/" + body.sku,
+      buffer,
+      body.fileName,
+      {
+        mediaOptions: { mimeType: body.mimeType || "image/jpeg", mediaType: "image" },
+        metadataOptions: { isPrivate: false, isVisitorUpload: false },
+      }
+    ).then((result) => ok({ body: JSON.stringify({ fileUrl: result.fileUrl }) }));
+  });
+}
