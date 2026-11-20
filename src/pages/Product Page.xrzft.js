@@ -728,9 +728,14 @@ async function setPageContentAndStates(product, extData, inventoryData) {
     }
   }
  
+  // Main image is already shown in #imageX2, so the gallery only gets the
+  // extra images. If there are none, collapse it so it takes no space.
   const mediaItems = product?.mediaItems || product?.productMedia || [];
-  if ($w("#gallery1") && Array.isArray(mediaItems)) {
-    $w("#gallery1").items = mediaItems
+  const gallery = el("#gallery1");
+  if (gallery) {
+    const secondaryItems = (Array.isArray(mediaItems) ? mediaItems : [])
+      .slice(1) // drop the main image (same as product.mainMedia)
+      .filter((item) => !item.mediaType || item.mediaType === "image")
       .slice(0, GALLERY_MAX_ITEMS)
       .map((item) => ({
         type: "image",
@@ -739,6 +744,14 @@ async function setPageContentAndStates(product, extData, inventoryData) {
         description: item.description || ""
       }))
       .filter((x) => x.src);
+
+    if (secondaryItems.length > 0) {
+      gallery.items = secondaryItems;
+      gallery.expand();
+    } else {
+      gallery.items = [];
+      gallery.collapse();
+    }
   }
  
   if ($w(LIFECYCLE_MODEL_ID)) {
